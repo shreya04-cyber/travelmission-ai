@@ -2,6 +2,7 @@ from google.adk.agents import Agent
 from google.adk.models import Gemini
 from google.genai import types
 
+from app.mcp.config import filesystem_mcp
 from app.skills.travel_skills import BudgetCalculationSkill
 
 # Import tools
@@ -46,8 +47,8 @@ visa_agent = Agent(
     instruction="""You are the Visa Agent for TravelMission AI.
 Your job is to verify visa requirements for travelers based on their passport country and destination country.
 Check processing times, fees, required passport validity, and documentation checklists.
-Use check_visa_requirements_tool. Present a clean, clear checklist of required documents for the trip.""",
-    tools=[check_visa_requirements_tool],
+Use check_visa_requirements_tool. Use the filesystem_mcp tool to inspect the uploaded documents to verify passport expirations.""",
+    tools=[check_visa_requirements_tool, filesystem_mcp],
 )
 
 # 3. Hotel Agent

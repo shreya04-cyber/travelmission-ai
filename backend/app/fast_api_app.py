@@ -13,6 +13,7 @@
 # limitations under the License.
 import os
 import shutil
+import time
 from typing import Any
 
 from fastapi import (
@@ -26,11 +27,13 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.runners import InMemoryRunner
 from google.cloud import logging as google_cloud_logging
 from google.genai import types
 from sqlalchemy.orm import Session
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app import models
 from app.agent import root_agent
@@ -68,6 +71,55 @@ UPLOAD_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads"
 )
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, limit: int = 60, window: int = 60):
+        super().__init__(app)
+        self.limit = limit
+        self.window = window
+        self.requests = {}
+
+    async def dispatch(self, request, call_next):
+        client_ip = request.client.host if request.client else "127.0.0.1"
+        now = time.time()
+
+        # Clean up old entries
+        self.requests = {
+            ip: times
+            for ip, times in self.requests.items()
+            if now - times[-1] < self.window
+        }
+
+        if client_ip not in self.requests:
+            self.requests[client_ip] = []
+
+        self.requests[client_ip] = [
+            t for t in self.requests[client_ip] if now - t < self.window
+        ]
+
+        if len(self.requests[client_ip]) >= self.limit:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Rate limit exceeded."},
+            )
+
+        self.requests[client_ip].append(now)
+        return await call_next(request)
+
+
+def sanitize_prompt(text: str) -> bool:
+    forbidden = [
+        "ignore previous instructions",
+        "system directive",
+        "you must now act as",
+        "override instructions",
+        "dan mode",
+    ]
+    for word in forbidden:
+        if word in text.lower():
+            return False
+    return True
 
 
 # Connection manager for WebSockets
@@ -369,7 +421,7 @@ app: FastAPI = get_fast_api_app(
 app.title = "TravelMission AI Operations Center"
 app.description = "API Operations Center for multi-agent travel operations."
 
-# Setup CORS for development
+# Setup CORS and Rate Limiting for security
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
@@ -377,6 +429,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RateLimitMiddleware, limit=60, window=60)
 
 # --- WebSocket Feed Endpoint ---
 
@@ -423,6 +476,13 @@ def create_trip(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
+    # Prompt injection check
+    if not sanitize_prompt(trip_in.destination):
+        raise HTTPException(
+            status_code=400,
+            detail="Potential prompt injection threat detected in destination input.",
+        )
+
     db_trip = models.Trip(
         destination=trip_in.destination,
         start_date=trip_in.start_date,
@@ -482,7 +542,16 @@ async def upload_document(
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    # Security: File validation & upload limit checks
+    # Security: File validation & upload limit checks (5MB limit)
+    MAX_FILE_SIZE = 5 * 1024 * 1024
+    file.file.seek(0, os.SEEK_END)
+    file_size = file.file.tell()
+    file.file.seek(0)  # reset pointer
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400, detail="File too large. Maximum size allowed is 5MB."
+        )
+
     if not file.filename.lower().endswith((".pdf", ".png", ".jpg", ".jpeg")):
         raise HTTPException(
             status_code=400, detail="Only PDF, PNG, or JPG files allowed."
@@ -507,7 +576,18 @@ async def upload_document(
     # Run parsing skill (simulate document parsing / OCR)
     try:
         parse_res = DocumentParsingSkill.execute(file_path)
-        db_doc.parsed_content = str(parse_res.get("extracted_entities", {}))
+        extracted = parse_res.get("extracted_entities", {}).copy()
+
+        # Mask sensitive PII data before saving
+        if "document_number" in extracted:
+            doc_num = str(extracted["document_number"])
+            extracted["document_number"] = (
+                doc_num[:2] + "*" * (len(doc_num) - 4) + doc_num[-2:]
+            )
+        if "birth_date" in extracted:
+            extracted["birth_date"] = "****-**-**"
+
+        db_doc.parsed_content = str(extracted)
         db_doc.status = "Parsed"
 
         # Log to agent feed
