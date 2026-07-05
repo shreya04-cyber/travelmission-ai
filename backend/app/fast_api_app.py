@@ -173,6 +173,7 @@ async def execute_travel_mission(
 
         # Run ADK agent
         runner = InMemoryRunner(agent=root_agent, app_name="app")
+        session_id = f"session_trip_{trip_id}"
         prompt = f"Plan a trip to {destination} from {start_date} to {end_date} with a budget of {budget_total} USD."
         state = {
             "trip_id": str(trip_id),
@@ -182,10 +183,18 @@ async def execute_travel_mission(
             "budget_total": budget_total,
         }
 
+        # Explicitly create the session to avoid "Session not found" runtime exceptions
+        await runner.session_service.create_session(
+            app_name="app",
+            user_id="user_default",
+            session_id=session_id,
+            state=state,
+        )
+
         # Run agent and broadcast events
         async for _event in runner.run_async(
             user_id="user_default",
-            session_id=f"session_trip_{trip_id}",
+            session_id=session_id,
             new_message=types.Content(parts=[types.Part.from_text(text=prompt)]),
             state_delta=state,
         ):
