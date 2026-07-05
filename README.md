@@ -1,8 +1,12 @@
 # TravelMission AI
 
+![TravelMission AI Banner](assets/media/github_banner.png)
+
 > "Your Personal AI Travel Operations Center."
 
 A complete, production-ready, full-stack multi-agent application built using Google's **Agent Development Kit (ADK)** for Kaggle's AI Agents Capstone.
+
+![TravelMission AI Hero Dashboard](assets/media/hero_dashboard.png)
 
 TravelMission AI coordinates a team of 12 specialized, autonomous AI agents through a centralized Orchestrator Agent. It models a professional travel agency operations desk, going far beyond typical single-turn text generators.
 
@@ -74,6 +78,8 @@ graph TD
 ```
 
 The system architecture decouples user interface logic from agent execution. The Next.js client renders a dashboard, while the FastAPI server runs the ADK Orchestrator. The Orchestrator delegates tasks to specialized agents. The agents communicate with the database, access local files using a Filesystem MCP server, and query external APIs to fetch live weather and exchange rates.
+
+![TravelMission AI System Architecture](assets/media/system_architecture.png)
 
 ---
 
@@ -149,6 +155,8 @@ graph LR
 
 The data flow diagram shows how data propagates through the system. User inputs are validated using Pydantic schemas, stored in the database, and passed to the Orchestrator. The Orchestrator delegates context to specialized agents. The agents run tools that query external APIs and return structured JSON. ADK callbacks record the step logs in the database, triggering the WebSocket gateway to update the client's feed.
 
+![TravelMission AI User Workflow Infographic](assets/media/user_workflow.png)
+
 ---
 
 ## 🤝 Agent Workflows & Collaboration
@@ -196,6 +204,8 @@ graph TD
 
 The multi-agent communication diagram shows how the Orchestrator coordinates specialized agents. By using a hub-and-spoke model with shared state, agents can share information and collaborate. For example, if the Weather Agent flags rain, the Activity Planner and Packing Agent automatically adjust their recommendations. Additionally, the Flight and Hotel agents send resolved costs to the Budget Agent to calculate the ledger.
 
+![Live Agent Collaboration Timeline](assets/media/collaboration_timeline.png)
+
 ---
 
 ### 5. Specialist Agent Fleet Registry
@@ -214,6 +224,8 @@ We split tasks across 12 distinct agents, limiting context pollution:
 * **Global Currency Agent**: Upgraded service managing live exchange rates, card/cash splits, and trends.
 * **Language Agent**: Formulates survival dictionaries and phrase translations.
 * **Transportation Agent**: Maps subway lines and transit passes.
+
+![Specialist Agent Fleet Registry](assets/media/agent_fleet.png)
 
 ---
 
@@ -259,6 +271,8 @@ graph TD
 ```
 
 The MCP architecture diagram shows how agents use the Model Context Protocol to access system resources. Stdio-based MCP servers allow the Visa Agent to read files using the Filesystem MCP and extract passport details using the Document Processing MCP. Other servers provide live search, weather feeds, currency rates, maps, and calendar exports.
+
+![Model Context Protocol Integration](assets/media/mcp_integration.png)
 
 ---
 
@@ -321,6 +335,8 @@ graph TD
 ```
 
 The agent skills diagram shows how backend skills are shared across different agents. This modular design keeps agent instructions simple. For example, the Weather Analysis Skill is shared by the Weather Agent, the Packing Agent, and the Activity Planner, allowing them to adapt to forecasts in a consistent manner.
+
+![Global Currency & Budget Integration Dashboard](assets/media/currency_dashboard.png)
 
 ---
 
