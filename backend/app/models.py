@@ -14,6 +14,7 @@ class Trip(Base):
     end_date = Column(String)
     budget_total = Column(Float)
     currency = Column(String, default="USD")
+    home_currency = Column(String, default="USD")
     status = Column(
         String, default="Planning"
     )  # Planning, Active, Completed, Cancelled
@@ -43,6 +44,7 @@ class ItineraryItem(Base):
     description = Column(Text)
     location = Column(String)
     cost = Column(Float, default=0.0)
+    cost_home_currency = Column(Float, default=0.0, nullable=True)
     agent_notes = Column(Text, nullable=True)
     weather_notes = Column(Text, nullable=True)
 
@@ -57,6 +59,7 @@ class BudgetLog(Base):
         String
     )  # Flight, Hotel, Food, Transportation, Shopping, Visa, Insurance, Emergency
     estimated_cost = Column(Float)
+    cost_home_currency = Column(Float, default=0.0, nullable=True)
     actual_cost = Column(Float, default=0.0)
     notes = Column(Text, nullable=True)
 

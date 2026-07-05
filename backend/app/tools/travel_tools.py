@@ -3,6 +3,8 @@ import os
 import random
 from typing import Any
 
+from app.mcp.currency_service import GlobalCurrencyService
+
 
 def search_flights_tool(origin: str, destination: str, date: str) -> dict[str, Any]:
     """Search for flights between origin and destination on a given date.
@@ -267,35 +269,22 @@ def get_currency_exchange_rate_tool(
     Returns:
         A dictionary containing exchange rate and local ATM cash advice.
     """
-    rates = {
-        "USD_JPY": 155.45,
-        "USD_EUR": 0.92,
-        "USD_GBP": 0.78,
-        "EUR_USD": 1.09,
-        "GBP_USD": 1.28,
-        "JPY_USD": 0.0064,
-        "USD_CAD": 1.36,
-    }
-
-    pair = f"{from_currency.upper()}_{to_currency.upper()}"
-    rate = rates.get(
-        pair, rates.get(f"{to_currency.upper()}_{from_currency.upper()}", 1.0)
-    )
-    if pair not in rates and f"{to_currency.upper()}_{from_currency.upper()}" in rates:
-        rate = 1.0 / rate
-
-    # ATM Cash suggestion
-    atm_advice = "It is highly recommended to withdraw cash at 7-Eleven or Post Office ATMs for the lowest foreign transaction fees. Most high-end stores and restaurants accept international Credit Cards."
-    if to_currency.upper() == "EUR":
-        atm_advice = "Schengen zone ATMs (especially bank-branded like BNP Paribas, Santander) offer excellent rates. Avoid Euronet ATMs which have high markup fees. Credit cards are widely accepted."
+    rate = GlobalCurrencyService.get_rate(from_currency, to_currency)
+    advice = GlobalCurrencyService.get_payment_advice(to_currency)
+    trends = GlobalCurrencyService.get_historical_trends(from_currency, to_currency)
 
     return {
         "status": "success",
         "from_currency": from_currency.upper(),
         "to_currency": to_currency.upper(),
         "exchange_rate": rate,
-        "atm_withdraw_recommendation": atm_advice,
-        "cash_versus_card_percentage": {"card": 75, "cash": 25},
+        "atm_withdraw_recommendation": advice["atm_warning"],
+        "cash_versus_card_percentage": {
+            "card": advice["card_acceptance_percent"],
+            "cash": advice["cash_split_percent"],
+        },
+        "recommended_payment_method": advice["recommended_payment_method"],
+        "historical_trends": trends,
     }
 
 

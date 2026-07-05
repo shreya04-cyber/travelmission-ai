@@ -19,6 +19,7 @@ interface Trip {
   end_date: string;
   budget_total: number;
   currency: string;
+  home_currency?: string;
   status: string;
 }
 
@@ -30,6 +31,7 @@ interface ItineraryItem {
   description: string;
   location: string;
   cost: number;
+  cost_home_currency?: number;
   agent_notes?: string;
   weather_notes?: string;
 }
@@ -38,6 +40,7 @@ interface BudgetLog {
   id: number;
   category: string;
   estimated_cost: number;
+  cost_home_currency?: number;
   actual_cost: number;
   notes?: string;
 }
@@ -79,7 +82,41 @@ export default function MissionControlDashboard() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [budgetTotal, setBudgetTotal] = useState<number>(2000);
+  const [homeCurrency, setHomeCurrency] = useState<string>("USD");
+  const [destCurrency, setDestCurrency] = useState<string>("EUR");
   const [creatingTrip, setCreatingTrip] = useState<boolean>(false);
+  const [currencyRates, setCurrencyRates] = useState<any>(null);
+  const [loadingRates, setLoadingRates] = useState<boolean>(false);
+  const [showBudgetInHome, setShowBudgetInHome] = useState<boolean>(false);
+
+  // Helper to format currency values safely
+  const formatCurrency = (val: number, cur: string) => {
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: cur.toUpperCase(),
+      }).format(val);
+    } catch {
+      return `${cur.toUpperCase()} ${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    }
+  };
+
+  const fetchCurrencyRates = async (home: string, dest: string) => {
+    setLoadingRates(true);
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/currency/rates?from_currency=${home}&to_currency=${dest}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setCurrencyRates(data);
+      }
+    } catch (err) {
+      console.error("Rates fetch error: ", err);
+    } finally {
+      setLoadingRates(false);
+    }
+  };
   
   // File upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -148,6 +185,7 @@ export default function MissionControlDashboard() {
       if (res.ok) {
         const data = await res.json();
         setSelectedTripDetails(data);
+        fetchCurrencyRates(data.home_currency || "USD", data.currency || "EUR");
       } else {
         generateMockDetails(id);
       }
@@ -234,7 +272,7 @@ export default function MissionControlDashboard() {
   const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!destination || !startDate || !endDate) return;
-    
+
     setCreatingTrip(true);
     try {
       const res = await fetch("http://localhost:8000/api/trips", {
@@ -245,10 +283,11 @@ export default function MissionControlDashboard() {
           start_date: startDate,
           end_date: endDate,
           budget_total: budgetTotal,
-          currency: "USD"
-        })
+          currency: destCurrency,
+          home_currency: homeCurrency,
+        }),
       });
-      
+
       if (res.ok) {
         const newTrip = await res.json();
         setTrips((prev) => [newTrip, ...prev]);
@@ -275,8 +314,9 @@ export default function MissionControlDashboard() {
       start_date: startDate,
       end_date: endDate,
       budget_total: budgetTotal,
-      currency: "USD",
-      status: "Planning"
+      currency: destCurrency,
+      home_currency: homeCurrency,
+      status: "Planning",
     };
     setTrips((prev) => [mockNew, ...prev]);
     setSelectedTripId(mockNew.id);
@@ -412,6 +452,7 @@ export default function MissionControlDashboard() {
               { id: "agents", label: "Agent Hub", icon: Sparkles },
               { id: "documents", label: "Documents", icon: FileText },
               { id: "budget", label: "Budget Log", icon: DollarSign },
+              { id: "currency", label: "Currency Intel", icon: ArrowRightLeft },
               { id: "settings", label: "Settings", icon: Settings },
             ].map((item) => {
               const Icon = item.icon;
@@ -529,7 +570,21 @@ export default function MissionControlDashboard() {
                       <div className="flex items-center space-x-4">
                         <div>
                           <span className="text-slate-500 block text-2xs uppercase">Est. Cost</span>
-                          <span className="font-semibold text-white text-sm">${selectedTripDetails?.budget_total || 0}</span>
+                          <span className="font-semibold text-white text-sm">
+                            {selectedTripDetails ? (
+                              <>
+                                {formatCurrency(selectedTripDetails.budget_total, selectedTripDetails.currency)}
+                                {selectedTripDetails.home_currency !== selectedTripDetails.currency && (
+                                  <span className="text-slate-400 text-xs font-normal ml-2">
+                                    ({formatCurrency(
+                                      selectedTripDetails.budget_logs?.reduce((acc, curr) => acc + (curr.cost_home_currency || curr.estimated_cost), 0) || selectedTripDetails.budget_total,
+                                      selectedTripDetails.home_currency || "USD"
+                                    )})
+                                  </span>
+                                )}
+                              </>
+                            ) : "$0"}
+                          </span>
                         </div>
                         <div>
                           <span className="text-slate-500 block text-2xs uppercase">Agents Active</span>
@@ -641,7 +696,14 @@ export default function MissionControlDashboard() {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-xs font-bold text-indigo-300 font-mono">${item.cost}</span>
+                              <span className="text-xs font-bold text-indigo-300 font-mono text-right">
+                                {formatCurrency(item.cost, selectedTripDetails?.currency || "USD")}
+                                {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && item.cost > 0 && (
+                                  <span className="text-slate-400 text-3xs font-normal block mt-0.5">
+                                    ({formatCurrency(item.cost_home_currency || item.cost, selectedTripDetails.home_currency || "USD")})
+                                  </span>
+                                )}
+                              </span>
                             </div>
 
                             {item.weather_notes && (
@@ -755,7 +817,7 @@ export default function MissionControlDashboard() {
                 {/* Planning Form */}
                 <div className="glass rounded-2xl p-6">
                   <h3 className="font-bold text-base text-white mb-6">Launch New Travel Mission</h3>
-                  <form onSubmit={handleCreateTrip} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                  <form onSubmit={handleCreateTrip} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
                     <div>
                       <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Destination City</label>
                       <input 
@@ -785,7 +847,7 @@ export default function MissionControlDashboard() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Total Budget ($)</label>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Total Budget</label>
                       <input 
                         type="number" 
                         value={budgetTotal} 
@@ -793,7 +855,47 @@ export default function MissionControlDashboard() {
                         className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white" 
                       />
                     </div>
-                    <div className="md:col-span-4 flex justify-end">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Home Currency</label>
+                      <select 
+                        value={homeCurrency} 
+                        onChange={(e) => setHomeCurrency(e.target.value)} 
+                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white font-semibold"
+                      >
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="CHF">CHF (Fr)</option>
+                        <option value="CNY">CNY (¥)</option>
+                        <option value="INR">INR (₹)</option>
+                        <option value="SGD">SGD ($)</option>
+                        <option value="AED">AED (Dh)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Dest Currency</label>
+                      <select 
+                        value={destCurrency} 
+                        onChange={(e) => setDestCurrency(e.target.value)} 
+                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white font-semibold"
+                      >
+                        <option value="EUR">EUR (€)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="AUD">AUD ($)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="CHF">CHF (Fr)</option>
+                        <option value="CNY">CNY (¥)</option>
+                        <option value="INR">INR (₹)</option>
+                        <option value="SGD">SGD ($)</option>
+                        <option value="AED">AED (Dh)</option>
+                      </select>
+                    </div>
+                    <div className="md:col-span-3 lg:col-span-6 flex justify-end">
                       <button 
                         type="submit" 
                         disabled={creatingTrip}
@@ -995,7 +1097,17 @@ export default function MissionControlDashboard() {
                   
                   {/* Left: Chart Visualization */}
                   <div className="glass rounded-2xl p-6 col-span-1 md:col-span-2 h-[380px]">
-                    <h3 className="font-bold text-sm text-white mb-4">Budget Division Breakdown</h3>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-sm text-white">Budget Division Breakdown</h3>
+                      {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
+                        <button 
+                          onClick={() => setShowBudgetInHome(!showBudgetInHome)}
+                          className="px-3 py-1.5 text-3xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/25 rounded-lg transition-all"
+                        >
+                          View in {showBudgetInHome ? selectedTripDetails.currency : selectedTripDetails.home_currency}
+                        </button>
+                      )}
+                    </div>
                     
                     {selectedTripDetails?.budget_logs && selectedTripDetails.budget_logs.length > 0 ? (
                       <div className="h-full w-full flex items-center justify-center">
@@ -1004,7 +1116,7 @@ export default function MissionControlDashboard() {
                             <Pie
                               data={selectedTripDetails.budget_logs.map(item => ({
                                 name: item.category,
-                                value: item.estimated_cost
+                                value: showBudgetInHome ? (item.cost_home_currency || item.estimated_cost) : item.estimated_cost
                               }))}
                               cx="50%"
                               cy="50%"
@@ -1017,7 +1129,7 @@ export default function MissionControlDashboard() {
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value) => `$${value}`} />
+                            <Tooltip formatter={(value) => formatCurrency(Number(value), showBudgetInHome ? (selectedTripDetails?.home_currency || "USD") : (selectedTripDetails?.currency || "EUR"))} />
                             <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: "11px", color: "#94a3b8" }} />
                           </PieChart>
                         </ResponsiveContainer>
@@ -1054,8 +1166,11 @@ export default function MissionControlDashboard() {
                       <thead>
                         <tr className="border-b border-slate-800 text-slate-400 font-medium">
                           <th className="pb-3">Category</th>
-                          <th className="pb-3 text-right">Estimated Cost ($)</th>
-                          <th className="pb-3 text-right">Actual Cost ($)</th>
+                          <th className="pb-3 text-right">Estimated Cost ({selectedTripDetails?.currency || "USD"})</th>
+                          {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
+                            <th className="pb-3 text-right">Home Value ({selectedTripDetails.home_currency})</th>
+                          )}
+                          <th className="pb-3 text-right">Actual Cost ({selectedTripDetails?.currency || "USD"})</th>
                           <th className="pb-3 pl-6">Line Status</th>
                         </tr>
                       </thead>
@@ -1063,8 +1178,17 @@ export default function MissionControlDashboard() {
                         {selectedTripDetails?.budget_logs.map((item) => (
                           <tr key={item.id}>
                             <td className="py-3 font-semibold text-white">{item.category}</td>
-                            <td className="py-3 text-right font-mono font-bold">${item.estimated_cost}</td>
-                            <td className="py-3 text-right font-mono">${item.actual_cost}</td>
+                            <td className="py-3 text-right font-mono font-bold">
+                              {formatCurrency(item.estimated_cost, selectedTripDetails?.currency || "USD")}
+                            </td>
+                            {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
+                              <td className="py-3 text-right font-mono font-medium text-slate-400">
+                                {formatCurrency(item.cost_home_currency || item.estimated_cost, selectedTripDetails.home_currency || "USD")}
+                              </td>
+                            )}
+                            <td className="py-3 text-right font-mono">
+                              {formatCurrency(item.actual_cost, selectedTripDetails?.currency || "USD")}
+                            </td>
                             <td className="py-3 pl-6">
                               <span className={`px-2 py-0.5 text-3xs font-semibold rounded ${
                                 item.actual_cost > 0 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-slate-800 text-slate-500"
@@ -1076,6 +1200,92 @@ export default function MissionControlDashboard() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+              </motion.div>
+            )}
+
+            {/* TAB: CURRENCY INTEL */}
+            {activeTab === "currency" && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  
+                  {/* Left: Trend Chart */}
+                  <div className="glass rounded-2xl p-6 col-span-1 md:col-span-2 h-[380px] flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-white mb-1">Exchange Rate Trend Tracker</h3>
+                      <p className="text-slate-400 text-xs">Simulated weekly fluctuation for {selectedTripDetails?.currency} relative to {selectedTripDetails?.home_currency}</p>
+                    </div>
+                    
+                    {currencyRates?.trends?.weekly_trend ? (
+                      <div className="h-[220px] w-full mt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={currencyRates.trends.weekly_trend}>
+                            <XAxis dataKey="day" stroke="#94a3b8" fontSize={10} />
+                            <YAxis stroke="#94a3b8" fontSize={10} domain={['auto', 'auto']} />
+                            <Tooltip formatter={(value) => [`${value}`, 'Rate']} />
+                            <Bar dataKey="rate" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : (
+                      <div className="text-center p-8 text-slate-500 text-xs flex-1 flex items-center justify-center">No trend analysis loaded. Initialize a travel mission to calculate.</div>
+                    )}
+                  </div>
+
+                  {/* Right: Cash/Card & ATM Surcharges */}
+                  <div className="glass rounded-2xl p-6 col-span-1 space-y-4 flex flex-col justify-between h-[380px]">
+                    <div>
+                      <h3 className="font-bold text-sm text-white mb-2">Payment Surcharge Advice</h3>
+                      <span className="text-2xs text-slate-500 uppercase tracking-wider block">Recommended Strategy</span>
+                      <p className="text-indigo-300 font-semibold text-xs mt-1">{currencyRates?.advice?.recommended_payment_method || "Credit Card (Zero Foreign Fee)"}</p>
+                    </div>
+
+                    <div className="space-y-3 text-xs">
+                      <div>
+                        <span className="text-slate-500 block text-2xs uppercase">Card Acceptance</span>
+                        <div className="w-full bg-slate-800 h-2 rounded-full mt-1 overflow-hidden">
+                          <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${currencyRates?.advice?.card_acceptance_percent || 80}%` }}></div>
+                        </div>
+                        <span className="text-slate-400 text-3xs mt-1 block">{currencyRates?.advice?.card_acceptance_percent || 80}% Cashless Card usage recommended</span>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-300 font-medium">
+                        <span className="font-bold text-rose-400 block text-3xs uppercase">ATM markup Warning</span>
+                        {currencyRates?.advice?.atm_warning || "Avoid standalone airport ATMs. Use bank ATMs for the best rate."}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Exchange Rates Alert Cards */}
+                <div className="glass rounded-2xl p-6">
+                  <h3 className="font-bold text-sm text-white mb-4">Currency Alerts & Exchange Risk Sentry</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                    <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 flex items-start space-x-3 text-indigo-200">
+                      <ArrowRightLeft className="h-5 w-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-white text-xs">Exchange Lock-in Alert</h4>
+                        <p className="mt-1 leading-relaxed">{currencyRates?.trends?.alert || "Weekly rate is stable. No action required."}</p>
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-start space-x-3 text-emerald-200">
+                      <Sparkles className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h4 className="font-bold text-white text-xs">Spending Prediction</h4>
+                        <p className="mt-1 leading-relaxed">
+                          Your home currency budget is optimized. Due to a {currencyRates?.trends?.percentage_change_week > 0 ? "weakening" : "strengthening"} rate, you have approximately {currencyRates?.trends?.percentage_change_week > 0 ? "fewer" : "extra"} funds available.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

@@ -10,6 +10,7 @@ class ItineraryItemBase(BaseModel):
     description: str
     location: str
     cost: float = 0.0
+    cost_home_currency: float | None = 0.0
     agent_notes: str | None = None
     weather_notes: str | None = None
 
@@ -29,6 +30,7 @@ class ItineraryItem(ItineraryItemBase):
 class BudgetLogBase(BaseModel):
     category: str
     estimated_cost: float
+    cost_home_currency: float | None = 0.0
     actual_cost: float = 0.0
     notes: str | None = None
 
@@ -66,6 +68,7 @@ class TripBase(BaseModel):
     end_date: str
     budget_total: float
     currency: str = "USD"
+    home_currency: str = "USD"
 
 
 class TripCreate(TripBase):

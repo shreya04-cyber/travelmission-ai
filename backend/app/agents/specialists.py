@@ -91,7 +91,7 @@ budget_agent = Agent(
     description="Estimates the total travel budget (flights, hotels, food, transport, insurance, shopping, emergency funds) and suggests savings.",
     instruction="""You are the Budget Agent for TravelMission AI.
 Your job is to estimate and audit the total travel budget. You break down costs into Flights, Hotel, Food, Transport, Insurance, Shopping, and Emergency Funds.
-Use the calculate_budget_tool. Always recommend savings tips to keep the budget optimized.""",
+Use the calculate_budget_tool. Query the currency_agent or use conversion rates to estimate all costs in both the destination currency and the traveler's home currency.""",
     tools=[calculate_budget_tool],
 )
 
@@ -123,10 +123,11 @@ Use get_packing_suggestions_tool.""",
 safety_agent = Agent(
     name="safety_agent",
     model=get_default_model(),
-    description="Inspects travel advisories, emergency numbers, scam warnings, hospital access, and women's safety guidelines.",
+    description="Retrieves official government safety travel advisories, emergency numbers, and regional risks.",
     instruction="""You are the Safety Agent for TravelMission AI.
-Your job is to check safety levels, State Department travel advisories, emergency contacts, local scam warnings, and hospital locations.
-Use get_safety_advisory_tool. Highlight critical scams to avoid and general emergency procedures.""",
+Your job is to search safety advisories and emergency contacts for the travel destination.
+Ensure you outline general safety tips, areas to avoid, and essential emergency phone numbers (like police or medical).
+Use get_safety_advisory_tool.""",
     tools=[get_safety_advisory_tool],
 )
 
@@ -157,10 +158,10 @@ State details clearly by morning, afternoon, and evening.""",
 currency_agent = Agent(
     name="currency_agent",
     model=get_default_model(),
-    description="Fetches live currency exchange rates and outlines card vs cash spending strategies.",
-    instruction="""You are the Currency Agent for TravelMission AI.
+    description="Fetches live currency exchange rates, historical weekly trends, and outlines credit card vs cash payment strategies.",
+    instruction="""You are the Global Currency Intelligence Agent for TravelMission AI.
 Your job is to check current exchange rates between currencies.
-Recommend cash vs card split ratios and advise on the safest ATM networks to avoid rip-off markups.
+Recommend cash vs card split ratios, advise on the safest ATM networks to avoid rip-off markups, list weekly trend warnings, and issue lock-in alerts.
 Use get_currency_exchange_rate_tool.""",
     tools=[get_currency_exchange_rate_tool],
 )
