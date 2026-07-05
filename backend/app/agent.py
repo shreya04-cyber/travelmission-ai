@@ -26,11 +26,16 @@ from app.agents import (
 from app.database import SessionLocal
 from app.models import AgentActivity
 
-# Set up GCP environment variables for local testing fallback
-_, project_id = google.auth.default()
-os.environ["GOOGLE_CLOUD_PROJECT"] = project_id or "travel-mission-capstone"
-os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
-os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
+# Set up GCP environment variables for local testing fallback, making GCP optional
+try:
+    _, project_id = google.auth.default()
+    os.environ["GOOGLE_CLOUD_PROJECT"] = project_id or "travel-mission-capstone"
+    os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
+    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
+except Exception:
+    # Fallback to Google AI Studio if GCP credentials are not present
+    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "False"
+    os.environ["GOOGLE_CLOUD_PROJECT"] = "travel-mission-capstone"
 
 # --- Callbacks for Live Activity Feed ---
 
