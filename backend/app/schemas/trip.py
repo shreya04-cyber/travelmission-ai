@@ -82,6 +82,10 @@ class TripUpdateStatus(BaseModel):
 class Trip(TripBase):
     id: int
     status: str
+    health_score: int | None = 100
+    active_alerts: str | None = "[]"
+    recommendations: str | None = "[]"
+    smart_notifications: str | None = "[]"
     created_at: datetime
 
     class Config:

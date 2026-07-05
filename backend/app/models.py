@@ -18,6 +18,10 @@ class Trip(Base):
     status = Column(
         String, default="Planning"
     )  # Planning, Active, Completed, Cancelled
+    health_score = Column(Integer, default=100)
+    active_alerts = Column(Text, default="[]")  # JSON string list
+    recommendations = Column(Text, default="[]")  # JSON string list
+    smart_notifications = Column(Text, default="[]")  # JSON string list
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     itinerary_items = relationship(

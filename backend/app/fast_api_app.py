@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import asyncio
+import json
 import os
 import shutil
 import time
@@ -32,6 +34,7 @@ from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.runners import InMemoryRunner
 from google.cloud import logging as google_cloud_logging
 from google.genai import types
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -65,6 +68,20 @@ except Exception:
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
+
+# Execute safe column migrations for SQLite compatibility
+with engine.connect() as conn:
+    for col, col_type in [
+        ("health_score", "INTEGER DEFAULT 100"),
+        ("active_alerts", "TEXT DEFAULT '[]'"),
+        ("recommendations", "TEXT DEFAULT '[]'"),
+        ("smart_notifications", "TEXT DEFAULT '[]'"),
+    ]:
+        try:
+            conn.execute(text(f"ALTER TABLE trips ADD COLUMN {col} {col_type}"))
+            conn.commit()
+        except Exception:
+            pass  # column already exists
 
 # Create UPLOAD_DIR
 UPLOAD_DIR = os.path.join(
@@ -564,6 +581,318 @@ def delete_trip(trip_id: int, db: Session = Depends(get_db)):
     db.delete(trip)
     db.commit()
     return {"status": "success", "message": "Trip deleted successfully"}
+
+
+@app.post("/api/trips/{trip_id}/simulate")
+async def simulate_agent_collaboration(
+    trip_id: int, scenario: str, db: Session = Depends(get_db)
+):
+    trip = db.query(models.Trip).filter(models.Trip.id == trip_id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    try:
+        alerts = json.loads(trip.active_alerts or "[]")
+    except Exception:
+        alerts = []
+    try:
+        recommendations = json.loads(trip.recommendations or "[]")
+    except Exception:
+        recommendations = []
+    try:
+        notifications = json.loads(trip.smart_notifications or "[]")
+    except Exception:
+        notifications = []
+
+    logs = []
+
+    if scenario == "flight_price_drop":
+        logs = [
+            (
+                "Flight Agent",
+                "Thought",
+                "Scanning flight grid... Detected price drop on direct SFO-HND route from $950 to $870.",
+            ),
+            (
+                "Budget Agent",
+                "Thought",
+                "Price drop detected. Recalculating Flight budget allocation. Saving $80.",
+            ),
+            (
+                "Orchestrator",
+                "Result",
+                "Re-budgeting complete. Notification dispatched to traveler.",
+            ),
+        ]
+        flight_log = (
+            db.query(models.BudgetLog)
+            .filter(
+                models.BudgetLog.trip_id == trip_id,
+                models.BudgetLog.category == "Flight",
+            )
+            .first()
+        )
+        if flight_log:
+            flight_log.estimated_cost = max(100.0, flight_log.estimated_cost - 80)
+            db.add(flight_log)
+        notifications.append("Your flight is now $80 cheaper.")
+        recommendations.append("Rebook flight via SFO direct route to save $80.")
+        trip.health_score = min(100, (trip.health_score or 100) + 5)
+
+    elif scenario == "heavy_rain":
+        logs = [
+            (
+                "Weather Agent",
+                "Thought",
+                "High-altitude cloud grid scan shows heavy rain alert on Day 2 in Shibuya.",
+            ),
+            (
+                "Activity Planner",
+                "Thought",
+                "Rain forecast received. Re-scheduling Shibuya Crossing stroll to TeamLab Planets digital art museum.",
+            ),
+            (
+                "Packing Agent",
+                "Thought",
+                "Adjusting packing recommendations: umbrella and water-resistant gear added to list.",
+            ),
+            (
+                "Hotel Agent",
+                "Thought",
+                "Suggesting indoor attractions near Shibuya Horizon Hotel: Shibuya Indoor Mall & Shibuya Sky.",
+            ),
+            (
+                "Orchestrator",
+                "Result",
+                "Mission agenda updated. Timeline shuffles compiled successfully.",
+            ),
+        ]
+        itinerary_items = (
+            db.query(models.ItineraryItem)
+            .filter(models.ItineraryItem.trip_id == trip_id)
+            .all()
+        )
+        for item in itinerary_items:
+            if (
+                "shibuya" in item.title.lower()
+                or "garden" in item.title.lower()
+                or "park" in item.title.lower()
+            ):
+                item.title = "Indoor Museum Visit (Weather Shifted)"
+                item.weather_notes = "Rain forecast detected. Shifted from outdoor activities to keep travelers dry."
+                db.add(item)
+        notifications.append("Tomorrow's weather changed. Outdoor plans were moved.")
+        alerts.append("Day 2 heavy rain warning. Shifted to indoor alternatives.")
+        recommendations.append("Carry an umbrella and use indoor subway links.")
+
+    elif scenario == "flight_delay":
+        logs = [
+            (
+                "Flight Agent",
+                "Thought",
+                "Flight SFO-HND delayed by 3 hours due to air traffic control congestion.",
+            ),
+            (
+                "Transportation Agent",
+                "Thought",
+                "Flight delay received. Adjusting airport transfer shuttle check-in time from 10:00 AM to 1:00 PM.",
+            ),
+            (
+                "Hotel Agent",
+                "Thought",
+                "Updating hotel check-in time: Late check-in request sent and confirmed at Shibuya Horizon Hotel.",
+            ),
+            (
+                "Activity Planner",
+                "Thought",
+                "Shifting Day 1 morning schedule. Shifting arrival tour to afternoon.",
+            ),
+            (
+                "Budget Agent",
+                "Thought",
+                "Delay audit complete. Recalculating transit surcharge ($15 fee added for late-night shuttle change).",
+            ),
+            (
+                "Orchestrator",
+                "Result",
+                "All schedules adjusted. Notifications dispatched to traveler.",
+            ),
+        ]
+        arrival_item = (
+            db.query(models.ItineraryItem)
+            .filter(
+                models.ItineraryItem.trip_id == trip_id,
+                models.ItineraryItem.day_number == 1,
+            )
+            .first()
+        )
+        if arrival_item:
+            arrival_item.title = "Arrival & Late Check-in (Delayed)"
+            arrival_item.description = "Flight delayed by 3 hours. Take airport transfer directly to Shibuya Horizon Hotel."
+            db.add(arrival_item)
+        transit_log = (
+            db.query(models.BudgetLog)
+            .filter(
+                models.BudgetLog.trip_id == trip_id,
+                models.BudgetLog.category == "Transportation",
+            )
+            .first()
+        )
+        if transit_log:
+            transit_log.estimated_cost += 15
+            db.add(transit_log)
+        notifications.append(
+            "Your flight is delayed by 3 hours. Transit and check-in times shifted."
+        )
+        alerts.append("Flight delay alert: Departure delayed by 3 hours.")
+
+    elif scenario == "passport_issue":
+        logs = [
+            (
+                "Visa Agent",
+                "Thought",
+                "Reviewing uploaded passport document. Passport expiry date is within 3 months of trip end date.",
+            ),
+            (
+                "Visa Agent",
+                "Result",
+                "Passport validity problem: Expiration date is less than 3 months. Visa entry validation failed.",
+            ),
+            (
+                "Orchestrator",
+                "Thought",
+                "Critical security alert. Reducing Trip Health Score. Demoting status to action required.",
+            ),
+            (
+                "Orchestrator",
+                "Result",
+                "Emergency checklist generated. Dispatching critical alert.",
+            ),
+        ]
+        trip.health_score = 35
+        notifications.append(
+            "Urgent: Passport expires too soon. Visa validation failed."
+        )
+        alerts.append("Critical: Passport validity is less than 3 months.")
+        recommendations.append(
+            "Renew passport immediately. Book emergency passport renewal slot."
+        )
+
+    elif scenario == "overspending":
+        logs = [
+            (
+                "Budget Agent",
+                "Thought",
+                "Auditing total expenditures. Estimated spending exceeds total budget allocation by $250.",
+            ),
+            (
+                "Local Guide Agent",
+                "Thought",
+                "Budget cap exceeded. Shifting dining suggestions: recommending budget-friendly local izakayas.",
+            ),
+            (
+                "Budget Agent",
+                "Result",
+                "Daily spending limit reduced. Restaurant suggestions updated.",
+            ),
+            (
+                "Orchestrator",
+                "Result",
+                "Financial constraints propagated. Dashboard budget markers updated.",
+            ),
+        ]
+        budget_logs = (
+            db.query(models.BudgetLog).filter(models.BudgetLog.trip_id == trip_id).all()
+        )
+        for blog in budget_logs:
+            if blog.category in ["Food", "Shopping"]:
+                blog.notes = "Cap reduced by Budget Agent due to overspending. Recommended low-cost local options."
+                db.add(blog)
+        notifications.append("Budget exceeded. Suggesting cheaper restaurants.")
+        alerts.append("Total cost exceeds budget allocation limit.")
+        recommendations.append(
+            "Reduce shopping allowance and choose local transit over taxis."
+        )
+        trip.health_score = max(50, (trip.health_score or 100) - 20)
+
+    elif scenario == "unsafe_weather":
+        logs = [
+            (
+                "Safety Agent",
+                "Thought",
+                "Severe storm warning issued for Shibuya region.",
+            ),
+            (
+                "Weather Agent",
+                "Thought",
+                "Confirming storm front active. Wind speeds exceeding 50 knots forecast.",
+            ),
+            (
+                "Local Guide Agent",
+                "Thought",
+                "Advising traveler safety: avoid high towers, suggest indoor Shibuya underground passages.",
+            ),
+            (
+                "Orchestrator",
+                "Result",
+                "Emergency contacts highlighted on dashboard: Shibuya Police (+81-3-3416-0110).",
+            ),
+        ]
+        notifications.append("Severe weather alert: Shibuya storm warning active.")
+        alerts.append("Severe storm warning: Shibuya region.")
+        recommendations.append(
+            "Stay indoors. Emergency contacts highlighted on dashboard."
+        )
+        trip.health_score = max(40, (trip.health_score or 100) - 25)
+
+    elif scenario == "currency_fluctuation":
+        logs = [
+            (
+                "Currency Agent",
+                "Thought",
+                "Exchange rate monitor: Dest currency JPY weakened by 2.4% against USD today.",
+            ),
+            (
+                "Budget Agent",
+                "Thought",
+                "Favorable exchange rate detected. Saving potential: exchange funds today to lock in rate.",
+            ),
+            ("Orchestrator", "Result", "Dispatched money exchange recommendation."),
+        ]
+        notifications.append("Favorable exchange rate detected. Exchange money now.")
+        recommendations.append("Exchange money today to lock in JPY favorable rate.")
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid scenario name")
+
+    trip.active_alerts = json.dumps(alerts)
+    trip.recommendations = json.dumps(recommendations)
+    trip.smart_notifications = json.dumps(notifications)
+    db.add(trip)
+    db.commit()
+
+    for agent, act_type, msg in logs:
+        db_act = models.AgentActivity(
+            trip_id=trip_id, agent_name=agent, activity_type=act_type, message=msg
+        )
+        db.add(db_act)
+        db.commit()
+        await manager.broadcast(
+            trip_id, {"type": act_type, "agent": agent, "message": msg}
+        )
+        await asyncio.sleep(0.3)
+
+    db.refresh(trip)
+    # Broadcast final trip details updated event
+    await manager.broadcast(
+        trip_id,
+        {
+            "type": "Result",
+            "agent": "Orchestrator",
+            "message": "Trip details synchronized successfully.",
+        },
+    )
+    return trip
 
 
 # --- Documents Upload & Parsing ---

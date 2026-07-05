@@ -21,6 +21,10 @@ interface Trip {
   currency: string;
   home_currency?: string;
   status: string;
+  health_score?: number;
+  active_alerts?: string;
+  recommendations?: string;
+  smart_notifications?: string;
 }
 
 interface ItineraryItem {
@@ -232,6 +236,18 @@ export default function MissionControlDashboard() {
     setSelectedTripDetails(details);
   };
 
+  const handleTriggerSimulation = async (scenario: string) => {
+    if (!selectedTripId) return;
+    try {
+      await fetch(`http://localhost:8000/api/trips/${selectedTripId}/simulate?scenario=${scenario}`, {
+        method: "POST"
+      });
+      fetchTripDetails(selectedTripId);
+    } catch (err) {
+      console.error("Simulation failed:", err);
+    }
+  };
+
   // Connect websocket for live activity feed
   const connectWebSocket = (tripId: number) => {
     if (wsRef.current) {
@@ -249,6 +265,9 @@ export default function MissionControlDashboard() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setAgentLogs((prev) => [...prev, data]);
+      if (data.message === "Trip details synchronized successfully.") {
+        fetchTripDetails(tripId);
+      }
     };
 
     ws.onclose = () => {
@@ -547,6 +566,151 @@ export default function MissionControlDashboard() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
+                {/* AI TRAVEL CONTROL ROOM (FLAGSHIP FEATURE) */}
+                <div className="glass rounded-2xl p-6 border border-indigo-500/20 bg-gradient-to-br from-[#0c1324] to-[#080d19]/80 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                  
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center pb-6 border-b border-slate-800/80 mb-6">
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center space-x-2">
+                        <Shield className="h-5 w-5 text-indigo-400" />
+                        <span>AI Mission Control Center</span>
+                        <span className="text-3xs bg-indigo-600/20 text-indigo-300 font-bold px-2 py-0.5 rounded border border-indigo-500/20 uppercase tracking-widest">Active Monitoring</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">Autonomous multi-agent orchestration grid. Trigger simulations below to observe real-time collaboration.</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4 mt-4 lg:mt-0">
+                      <div className="text-right">
+                        <span className="text-slate-500 text-3xs uppercase tracking-wider block font-bold">Trip Health Score</span>
+                        <span className="text-xs text-slate-400 font-semibold block">Based on 9 validation vectors</span>
+                      </div>
+                      <div className="relative h-16 w-16 flex items-center justify-center rounded-full bg-slate-900/60 border-2 border-slate-800 shadow-inner">
+                        <div className={`absolute inset-0 rounded-full border-2 ${
+                          (selectedTripDetails?.health_score || 100) >= 80 ? "border-emerald-500/30" :
+                          (selectedTripDetails?.health_score || 100) >= 50 ? "border-amber-500/30" : "border-rose-500/30"
+                        }`}></div>
+                        <span className={`text-xl font-black font-mono ${
+                          (selectedTripDetails?.health_score || 100) >= 80 ? "text-emerald-400" :
+                          (selectedTripDetails?.health_score || 100) >= 50 ? "text-amber-400" : "text-rose-400 animate-pulse"
+                        }`}>
+                          {selectedTripDetails?.health_score || 100}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Active Alerts & Advice */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <ShieldAlert className="h-4 w-4 text-rose-500" />
+                        <span>Active Sentry Alerts & Advice</span>
+                      </h4>
+                      <div className="space-y-2.5 h-[160px] overflow-y-auto no-scrollbar">
+                        {selectedTripDetails?.active_alerts && JSON.parse(selectedTripDetails.active_alerts).length > 0 ? (
+                          JSON.parse(selectedTripDetails.active_alerts).map((alert: string, idx: number) => (
+                            <div key={idx} className="p-3 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-300 text-2xs font-semibold leading-relaxed flex items-start space-x-2">
+                              <span className="mt-0.5">⚠️</span>
+                              <span>{alert}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center rounded-xl border border-slate-800 bg-slate-900/40 text-slate-500 text-2xs italic">
+                            No critical alerts active. System checks green.
+                          </div>
+                        )}
+                        {selectedTripDetails?.recommendations && JSON.parse(selectedTripDetails.recommendations).length > 0 && (
+                          JSON.parse(selectedTripDetails.recommendations).map((rec: string, idx: number) => (
+                            <div key={idx} className="p-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300 text-2xs font-semibold leading-relaxed flex items-start space-x-2">
+                              <span className="mt-0.5">💡</span>
+                              <span>{rec}</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Smart Notifications Hub */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <MessageSquare className="h-4 w-4 text-indigo-400" />
+                        <span>Smart Notification Hub</span>
+                      </h4>
+                      <div className="space-y-2 h-[160px] overflow-y-auto no-scrollbar">
+                        {selectedTripDetails?.smart_notifications && JSON.parse(selectedTripDetails.smart_notifications).length > 0 ? (
+                          JSON.parse(selectedTripDetails.smart_notifications).map((notif: string, idx: number) => (
+                            <div key={idx} className="p-3 rounded-xl border border-slate-800 bg-[#090d16]/80 text-slate-300 text-2xs font-semibold leading-relaxed shadow-sm">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-3xs text-indigo-400 uppercase tracking-widest font-bold">System Broadcast</span>
+                                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-ping"></span>
+                              </div>
+                              {notif}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-3 text-center rounded-xl border border-slate-800 bg-slate-900/40 text-slate-500 text-2xs italic">
+                            Waiting for real-time broadcasts...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Active Agent Grid Status */}
+                    <div className="space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                        <Globe className="h-4 w-4 text-emerald-400" />
+                        <span>Active Agent Grid Status</span>
+                      </h4>
+                      <div className="grid grid-cols-3 gap-2 text-3xs font-bold text-center">
+                        {[
+                          { name: "Flight", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Visa", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Hotel", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Budget", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Weather", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Safety", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Packing", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Guide", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Activity", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Currency", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-indigo-400" : "text-slate-500" },
+                          { name: "Language", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" },
+                          { name: "Transit", status: selectedTripDetails?.status === "Active" ? "Active" : "Idle", color: selectedTripDetails?.status === "Active" ? "text-emerald-400" : "text-slate-500" }
+                        ].map((ag, idx) => (
+                          <div key={idx} className="p-2 rounded-lg border border-slate-800/80 bg-[#090d16]/40 flex flex-col justify-between">
+                            <span className="text-slate-300 block mb-0.5 truncate">{ag.name}</span>
+                            <span className={`text-4xs ${ag.color} block font-extrabold uppercase tracking-widest`}>{ag.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Simulation triggers controller */}
+                  <div className="mt-6 pt-5 border-t border-slate-800/80">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">Trigger Reactive Collaboration:</span>
+                    <div className="flex flex-wrap gap-2.5">
+                      {[
+                        { id: "flight_price_drop", label: "✈️ Flight Price Drop", color: "hover:border-emerald-500/50 hover:bg-emerald-500/5" },
+                        { id: "heavy_rain", label: "🌧️ Heavy Rain Alert", color: "hover:border-indigo-500/50 hover:bg-indigo-500/5" },
+                        { id: "flight_delay", label: "⏳ SFO-HND Flight Delay", color: "hover:border-amber-500/50 hover:bg-amber-500/5" },
+                        { id: "passport_issue", label: "🛂 Visa Passport Expiry", color: "hover:border-rose-500/50 hover:bg-rose-500/5" },
+                        { id: "overspending", label: "💳 Budget Overspending", color: "hover:border-yellow-500/50 hover:bg-yellow-500/5" },
+                        { id: "unsafe_weather", label: "🌪️ Severe Storm Sentry", color: "hover:border-rose-500/50 hover:bg-rose-500/5" },
+                        { id: "currency_fluctuation", label: "📈 FX Fluctuation", color: "hover:border-emerald-500/50 hover:bg-emerald-500/5" }
+                      ].map((scen, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleTriggerSimulation(scen.id)}
+                          className={`px-3 py-2 text-3xs font-semibold text-slate-300 bg-slate-900 border border-slate-800 rounded-xl transition-all shadow-sm ${scen.color}`}
+                        >
+                          {scen.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
                 {/* 3-Column Top Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   
