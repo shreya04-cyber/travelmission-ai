@@ -454,13 +454,23 @@ async def execute_travel_mission(
         db.close()
 
 
-# Base ADK fast api setup
+# Production-ready FastAPI application setup
 AGENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-allow_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+# Support custom CORS allowed origins from environment variable
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
+if cors_env:
+    allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
+else:
+    allow_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://travelmission-ai.vercel.app",
+        "https://travelmission-ai-frontend.vercel.app",
+    ]
 app: FastAPI = get_fast_api_app(
     agents_dir=AGENT_DIR,
-    web=True,
+    web=False,  # Disable or remove the ADK Developer UI from public deployment
     artifact_service_uri=None,
     allow_origins=allow_origins,
     session_service_uri=None,
@@ -479,6 +489,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(RateLimitMiddleware, limit=60, window=60)
+
+
+@app.get("/")
+def read_root():
+    return {
+        "status": "online",
+        "service": "TravelMission AI Backend",
+        "version": "1.0",
+        "message": "Backend is running successfully.",
+    }
+
+
+@app.get("/health")
+def read_health():
+    return {"status": "healthy"}
+
+
+@app.get("/version")
+def read_version():
+    return {
+        "version": os.getenv("AGENT_VERSION", "1.0"),
+        "commit_sha": os.getenv("COMMIT_SHA", "unknown"),
+    }
 
 # --- WebSocket Feed Endpoint ---
 
