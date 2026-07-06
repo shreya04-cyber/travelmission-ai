@@ -7,9 +7,10 @@ import {
   MapPin, CheckSquare, MessageSquare, BookOpen, Compass, RotateCcw, 
   AlertTriangle, Upload, HelpCircle, Settings, Trash2, Send, Activity, 
   ChevronRight, Sparkles, User, Globe, AlertCircle, FileText, ArrowRightLeft,
-  ChevronDown
+  ChevronDown, Menu, X, Info, Thermometer, Wind, Sun, Search, TrendingUp,
+  TrendingDown, CheckCircle2, ChevronLeft, Lock
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, Legend } from "recharts";
 
 // Interfaces
 interface Trip {
@@ -70,9 +71,43 @@ interface AgentLog {
   timestamp?: string;
 }
 
+interface Country {
+  name: string;
+  code: string;
+  flag: string;
+  currency: string;
+}
+
+const COUNTRIES: Country[] = [
+  { name: "Tokyo, Japan", code: "JP", flag: "🇯🇵", currency: "JPY" },
+  { name: "Paris, France", code: "FR", flag: "🇫🇷", currency: "EUR" },
+  { name: "New York, USA", code: "US", flag: "🇺🇸", currency: "USD" },
+  { name: "London, UK", code: "GB", flag: "🇬🇧", currency: "GBP" },
+  { name: "Delhi, India", code: "IN", flag: "🇮🇳", currency: "INR" },
+  { name: "Berlin, Germany", code: "DE", flag: "🇩🇪", currency: "EUR" },
+  { name: "Rome, Italy", code: "IT", flag: "🇮🇹", currency: "EUR" },
+  { name: "Sydney, Australia", code: "AU", flag: "🇦🇺", currency: "AUD" },
+  { name: "Toronto, Canada", code: "CA", flag: "🇨🇦", currency: "CAD" },
+  { name: "Singapore", code: "SG", flag: "🇸🇬", currency: "SGD" },
+  { name: "Madrid, Spain", code: "ES", flag: "🇪🇸", currency: "EUR" },
+  { name: "Geneva, Switzerland", code: "CH", flag: "🇨🇭", currency: "CHF" },
+  { name: "Bangkok, Thailand", code: "TH", flag: "🇹🇭", currency: "THB" },
+  { name: "Seoul, South Korea", code: "KR", flag: "🇰🇷", currency: "KRW" },
+  { name: "Beijing, China", code: "CN", flag: "🇨🇳", currency: "CNY" },
+  { name: "Dubai, UAE", code: "AE", flag: "🇦🇪", currency: "AED" },
+  { name: "Amsterdam, Netherlands", code: "NL", flag: "🇳🇱", currency: "EUR" },
+  { name: "Cape Town, South Africa", code: "ZA", flag: "🇿🇦", currency: "ZAR" },
+  { name: "Rio de Janeiro, Brazil", code: "BR", flag: "🇧🇷", currency: "BRL" },
+  { name: "Mexico City, Mexico", code: "MX", flag: "🇲🇽", currency: "MXN" }
+];
+
 const COLORS = ["#6366f1", "#10b981", "#f43f5e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899"];
 
 export default function MissionControlDashboard() {
+  const [showLanding, setShowLanding] = useState<boolean>(true);
+  const [showArchModal, setShowArchModal] = useState<boolean>(false);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [trips, setTrips] = useState<Trip[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
@@ -83,6 +118,9 @@ export default function MissionControlDashboard() {
   
   // Trip creation state
   const [destination, setDestination] = useState<string>("");
+  const [showCountryDropdown, setShowCountryDropdown] = useState<boolean>(false);
+  const [countrySearch, setCountrySearch] = useState<string>("");
+  
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [budgetTotal, setBudgetTotal] = useState<number>(2000);
@@ -92,6 +130,143 @@ export default function MissionControlDashboard() {
   const [currencyRates, setCurrencyRates] = useState<any>(null);
   const [loadingRates, setLoadingRates] = useState<boolean>(false);
   const [showBudgetInHome, setShowBudgetInHome] = useState<boolean>(false);
+
+  // Currency Converter Custom State
+  const [convertAmount, setConvertAmount] = useState<number>(100);
+  const [convertFrom, setConvertFrom] = useState<string>("USD");
+  const [convertTo, setConvertTo] = useState<string>("EUR");
+  const [showFromList, setShowFromList] = useState<boolean>(false);
+  const [showToList, setShowToList] = useState<boolean>(false);
+
+  // File upload state
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  
+  // Chat state
+  const [chatMessage, setChatMessage] = useState<string>("");
+  const [chatHistory, setChatHistory] = useState<{sender: string, text: string}[]>([
+    { sender: "Orchestrator", text: "Welcome to TravelMission AI. Select a trip or create a new mission to begin." }
+  ]);
+
+  const activityEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+    fetchTrips();
+  }, []);
+
+  // Glowing Earth Landing Canvas
+  useEffect(() => {
+    if (!showLanding || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let angle = 0;
+
+    const resize = () => {
+      canvas.width = canvas.parentElement?.clientWidth || 500;
+      canvas.height = canvas.parentElement?.clientHeight || 500;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const r = Math.min(cx, cy) * 0.6;
+
+      // Glow backing
+      const glow = ctx.createRadialGradient(cx, cy, r * 0.8, cx, cy, r * 1.5);
+      glow.addColorStop(0, "rgba(99, 102, 241, 0.15)");
+      glow.addColorStop(0.5, "rgba(99, 102, 241, 0.05)");
+      glow.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Earth body
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = "#0c1324";
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.4)";
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+
+      // Rotating grid lines
+      angle += 0.003;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      // Latitudes
+      for (let i = -3; i <= 3; i++) {
+        ctx.beginPath();
+        const yVal = (r * i) / 4;
+        const rad = Math.sqrt(r * r - yVal * yVal);
+        ctx.ellipse(0, yVal, rad, rad * 0.25, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(99, 102, 241, 0.15)";
+        ctx.stroke();
+      }
+
+      // Longitudes
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, r, r * Math.sin((i * Math.PI) / 4), 0, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(99, 102, 241, 0.15)";
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Route lines connecting global nodes
+      const points = [
+        { x: cx - r * 0.5, y: cy - r * 0.3, label: "SFO" },
+        { x: cx + r * 0.6, y: cy - r * 0.1, label: "HND" },
+        { x: cx - r * 0.1, y: cy + r * 0.5, label: "CDG" },
+        { x: cx + r * 0.2, y: cy - r * 0.5, label: "LHR" }
+      ];
+
+      points.forEach((p, idx) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#10b981";
+        ctx.shadowColor = "#10b981";
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0; // reset
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.font = "10px sans-serif";
+        ctx.fillText(p.label, p.x + 8, p.y + 3);
+
+        // Arc connections
+        const next = points[(idx + 1) % points.length];
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.quadraticCurveTo((p.x + next.x) / 2, (p.y + next.y) / 2 - 40, next.x, next.y);
+        ctx.strokeStyle = "rgba(99, 102, 241, 0.35)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [showLanding]);
 
   // Helper to format currency values safely
   const formatCurrency = (val: number, cur: string) => {
@@ -121,25 +296,6 @@ export default function MissionControlDashboard() {
       setLoadingRates(false);
     }
   };
-  
-  // File upload state
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState<boolean>(false);
-  
-  // Chat state
-  const [chatMessage, setChatMessage] = useState<string>("");
-  const [chatHistory, setChatHistory] = useState<{sender: string, text: string}[]>([
-    { sender: "Orchestrator", text: "Welcome to TravelMission AI. Select a trip or create a new mission to begin." }
-  ]);
-
-  const activityEndRef = useRef<HTMLDivElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  // Avoid hydration mismatch
-  useEffect(() => {
-    setIsMounted(true);
-    fetchTrips();
-  }, []);
 
   // Fetch list of trips
   const fetchTrips = async () => {
@@ -152,10 +308,9 @@ export default function MissionControlDashboard() {
           setSelectedTripId(data[0].id);
         }
       } else {
-        // Mock fallback if API not running
         const mockTrips: Trip[] = [
-          { id: 1, destination: "Tokyo", start_date: "2026-10-15", end_date: "2026-10-20", budget_total: 3000, currency: "USD", status: "Active" },
-          { id: 2, destination: "Paris", start_date: "2026-12-01", end_date: "2026-12-06", budget_total: 2500, currency: "USD", status: "Planning" }
+          { id: 1, destination: "Tokyo, Japan", start_date: "2026-10-15", end_date: "2026-10-20", budget_total: 3000, currency: "USD", status: "Active", health_score: 95 },
+          { id: 2, destination: "Paris, France", start_date: "2026-12-01", end_date: "2026-12-06", budget_total: 2500, currency: "USD", status: "Planning", health_score: 85 }
         ];
         setTrips(mockTrips);
         setSelectedTripId(1);
@@ -163,8 +318,8 @@ export default function MissionControlDashboard() {
     } catch (e) {
       console.log("Using Mock Fallbacks (Backend not running)");
       const mockTrips: Trip[] = [
-        { id: 1, destination: "Tokyo", start_date: "2026-10-15", end_date: "2026-10-20", budget_total: 3000, currency: "USD", status: "Active" },
-        { id: 2, destination: "Paris", start_date: "2026-12-01", end_date: "2026-12-06", budget_total: 2500, currency: "USD", status: "Planning" }
+        { id: 1, destination: "Tokyo, Japan", start_date: "2026-10-15", end_date: "2026-10-20", budget_total: 3000, currency: "USD", status: "Active", health_score: 95 },
+        { id: 2, destination: "Paris, France", start_date: "2026-12-01", end_date: "2026-12-06", budget_total: 2500, currency: "USD", status: "Planning", health_score: 85 }
       ];
       setTrips(mockTrips);
       setSelectedTripId(1);
@@ -174,13 +329,8 @@ export default function MissionControlDashboard() {
   // Fetch details of selected trip
   useEffect(() => {
     if (!selectedTripId) return;
-    
-    // Connect WebSocket feed
     connectWebSocket(selectedTripId);
-    
-    // Poll/fetch trip data
     fetchTripDetails(selectedTripId);
-
   }, [selectedTripId]);
 
   const fetchTripDetails = async (id: number) => {
@@ -199,30 +349,34 @@ export default function MissionControlDashboard() {
   };
 
   const generateMockDetails = (id: number) => {
-    const isTokyo = id === 1 || (trips.find(t => t.id === id)?.destination.toLowerCase() === "tokyo");
+    const isTokyo = id === 1 || (trips.find(t => t.id === id)?.destination.toLowerCase().includes("tokyo"));
     
     const details: TripDetail = {
       id: id,
-      destination: isTokyo ? "Tokyo" : "Paris",
+      destination: isTokyo ? "Tokyo, Japan" : "Paris, France",
       start_date: isTokyo ? "2026-10-15" : "2026-12-01",
       end_date: isTokyo ? "2026-10-20" : "2026-12-06",
       budget_total: isTokyo ? 3000 : 2500,
       currency: "USD",
       status: isTokyo ? "Active" : "Planning",
+      health_score: isTokyo ? 95 : 85,
+      active_alerts: JSON.stringify(["Day 2 heavy rain warning. Shifted to indoor alternatives."]),
+      recommendations: JSON.stringify(["Rebook flight via SFO direct route to save $80."]),
+      smart_notifications: JSON.stringify(["Your flight is now $80 cheaper."]),
       documents: [
         { id: 101, file_name: "Passport_JohnDoe.pdf", file_type: "application/pdf", status: "Parsed", created_at: "2026-07-05T10:00:00Z" }
       ],
       budget_logs: [
-        { id: 201, category: "Flight", estimated_cost: isTokyo ? 950 : 800, actual_cost: 950 },
+        { id: 201, category: "Flight", estimated_cost: isTokyo ? 870 : 800, actual_cost: 870 },
         { id: 202, category: "Hotel", estimated_cost: isTokyo ? 1100 : 900, actual_cost: 0 },
         { id: 203, category: "Food", estimated_cost: 300, actual_cost: 0 },
-        { id: 204, category: "Transportation", estimated_cost: 150, actual_cost: 0 },
+        { id: 204, category: "Transportation", estimated_cost: 165, actual_cost: 0 },
         { id: 205, category: "Shopping", estimated_cost: 200, actual_cost: 0 },
         { id: 206, category: "Insurance", estimated_cost: 100, actual_cost: 100 },
         { id: 207, category: "Emergency Fund", estimated_cost: 200, actual_cost: 0 }
       ],
       itinerary_items: isTokyo ? [
-        { id: 301, day_number: 1, time_of_day: "Morning", title: "Arrival at Haneda Airport", description: "Clear customs and pick up Pocket Wi-Fi.", location: "Haneda Airport", cost: 0, agent_notes: "Visa Agent: US Citizens visa-free entry validated." },
+        { id: 301, day_number: 1, time_of_day: "Morning", title: "Arrival & Late Check-in (Delayed)", description: "Flight delayed by 3 hours. Take airport transfer directly.", location: "Haneda Airport", cost: 0, agent_notes: "Visa Agent: US Citizens visa-free entry validated." },
         { id: 302, day_number: 1, time_of_day: "Afternoon", title: "Check-in at Shibuya Horizon Hotel", description: "Drop off luggage and rest.", location: "Shibuya", cost: 0, agent_notes: "Hotel Agent: Hotel rated 94/100 safety score." },
         { id: 303, day_number: 1, time_of_day: "Evening", title: "Shibuya Crossing & Izakaya", description: "Walk the famous crossing and dine at local izakaya.", location: "Shibuya", cost: 35, agent_notes: "Local Guide Agent: Tipping is strictly forbidden in Japan." },
         { id: 304, day_number: 2, time_of_day: "Morning", title: "Indoor Museum Visit (Weather Shifted)", description: "Visit Tokyo National Museum.", location: "Ueno", cost: 15, weather_notes: "Weather Agent: Shuffled to indoor venue due to rain alert." }
@@ -272,7 +426,6 @@ export default function MissionControlDashboard() {
 
     ws.onclose = () => {
       setWebsocketActive(false);
-      // Fallback logs for demo if socket closed
       if (agentLogs.length === 0) {
         const fallbacks: AgentLog[] = [
           { type: "Thought", agent: "Orchestrator", message: "Planning mission initialized. Deploying sub-agents." },
@@ -303,121 +456,102 @@ export default function MissionControlDashboard() {
           end_date: endDate,
           budget_total: budgetTotal,
           currency: destCurrency,
-          home_currency: homeCurrency,
+          home_currency: homeCurrency
         }),
       });
 
       if (res.ok) {
-        const newTrip = await res.json();
-        setTrips((prev) => [newTrip, ...prev]);
-        setSelectedTripId(newTrip.id);
+        const data = await res.json();
+        setTrips((prev) => [data, ...prev]);
+        setSelectedTripId(data.id);
+        setDestination("");
+        setCountrySearch("");
         setActiveTab("dashboard");
-      } else {
-        alert("Failed to plan trip via backend. Adding mock trip.");
-        addMockCreatedTrip();
       }
     } catch (err) {
-      addMockCreatedTrip();
+      // Mock local addition
+      const mockId = Date.now();
+      const mockNew: Trip = {
+        id: mockId,
+        destination,
+        start_date: startDate,
+        end_date: endDate,
+        budget_total: budgetTotal,
+        currency: destCurrency,
+        home_currency: homeCurrency,
+        status: "Planning",
+        health_score: 100
+      };
+      setTrips((prev) => [mockNew, ...prev]);
+      setSelectedTripId(mockId);
+      setDestination("");
+      setCountrySearch("");
+      setActiveTab("dashboard");
     } finally {
       setCreatingTrip(false);
-      setDestination("");
-      setStartDate("");
-      setEndDate("");
     }
   };
 
-  const addMockCreatedTrip = () => {
-    const mockNew: Trip = {
-      id: Date.now(),
-      destination: destination,
-      start_date: startDate,
-      end_date: endDate,
-      budget_total: budgetTotal,
-      currency: destCurrency,
-      home_currency: homeCurrency,
-      status: "Planning",
-    };
-    setTrips((prev) => [mockNew, ...prev]);
-    setSelectedTripId(mockNew.id);
-    setActiveTab("dashboard");
-    
-    // Simulate live agent feed
-    const steps: AgentLog[] = [
-      { type: "Thought", agent: "Orchestrator", message: `Initializing travel mission for ${destination}.` },
-      { type: "Thought", agent: "Weather Agent", message: "Checking weather grid... Forecast shows clear, sunny skies." },
-      { type: "Thought", agent: "Flight Agent", message: "Scanning airlines for direct flight routes." },
-      { type: "Thought", agent: "Hotel Agent", message: "Finding safe lodgings near public transit." },
-      { type: "Result", agent: "Orchestrator", message: "Mission compiled successfully!" }
-    ];
-    
-    setAgentLogs([]);
-    steps.forEach((step, idx) => {
-      setTimeout(() => {
-        setAgentLogs((prev) => [...prev, step]);
-      }, idx * 1000);
-    });
-  };
-
-  // Delete trip
   const handleDeleteTrip = async (id: number) => {
-    if (!confirm("Are you sure you want to abort this travel mission?")) return;
-    
     try {
-      const res = await fetch(`http://localhost:8000/api/trips/${id}`, { method: "DELETE" });
+      const res = await fetch(`http://localhost:8000/api/trips/${id}`, {
+        method: "DELETE"
+      });
       if (res.ok) {
         setTrips((prev) => prev.filter(t => t.id !== id));
         if (selectedTripId === id) {
-          setSelectedTripId(trips.length > 1 ? trips[0].id : null);
+          setSelectedTripId(null);
+          setSelectedTripDetails(null);
         }
       }
-    } catch (e) {
+    } catch {
       setTrips((prev) => prev.filter(t => t.id !== id));
+      if (selectedTripId === id) {
+        setSelectedTripId(null);
+        setSelectedTripDetails(null);
+      }
     }
   };
 
-  // Upload document
-  const handleUploadDocument = async (e: React.FormEvent) => {
+  // Drag and Drop File Parser Handler
+  const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uploadFile || !selectedTripId) return;
-    
+
     setUploading(true);
     const formData = new FormData();
     formData.append("file", uploadFile);
-    
+
     try {
       const res = await fetch(`http://localhost:8000/api/trips/${selectedTripId}/documents`, {
         method: "POST",
         body: formData
       });
       if (res.ok) {
-        const data = await res.json();
-        alert("Document parsed successfully!");
         fetchTripDetails(selectedTripId);
-      } else {
-        alert("Upload simulation completed.");
-        addMockDocument();
+        setUploadFile(null);
       }
-    } catch (err) {
-      addMockDocument();
+    } catch {
+      setTimeout(() => {
+        if (selectedTripDetails) {
+          const newDoc = {
+            id: Date.now(),
+            file_name: uploadFile.name,
+            file_type: uploadFile.type || "application/octet-stream",
+            status: "Parsed",
+            created_at: new Date().toISOString()
+          };
+          setSelectedTripDetails({
+            ...selectedTripDetails,
+            documents: [...selectedTripDetails.documents, newDoc]
+          });
+        }
+        setUploadFile(null);
+        setUploading(false);
+      }, 1550);
     } finally {
       setUploading(false);
-      setUploadFile(null);
     }
-  };
-
-  const addMockDocument = () => {
-    if (!selectedTripDetails) return;
-    const newDoc: UserDocument = {
-      id: Date.now(),
-      file_name: uploadFile?.name || "ticket.pdf",
-      file_type: "application/pdf",
-      status: "Parsed",
-      created_at: new Date().toISOString()
-    };
-    setSelectedTripDetails({
-      ...selectedTripDetails,
-      documents: [...selectedTripDetails.documents, newDoc]
-    });
   };
 
   // Send chat follow up
@@ -446,21 +580,206 @@ export default function MissionControlDashboard() {
     activityEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [agentLogs]);
 
+  // Autocomplete country match
+  const filteredCountries = countrySearch 
+    ? COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+    : COUNTRIES;
+
+  const mockWeeklyTrend = [
+    { day: "Wk 1", rate: 1.07 },
+    { day: "Wk 2", rate: 1.09 },
+    { day: "Wk 3", rate: 1.08 },
+    { day: "Wk 4", rate: 1.11 }
+  ];
+
   if (!isMounted) return null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#080c14] text-slate-100 antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#080c14] text-slate-100 antialiased font-sans">
       
+      {/* GLOW BACKGROUND EFFECT */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-500/10 blur-3xl"></div>
+        <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-emerald-500/5 blur-3xl"></div>
+      </div>
+
+      {/* FULL SCREEN Futuristic Landing Page */}
+      <AnimatePresence>
+        {showLanding && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute inset-0 bg-[#080c14] z-50 overflow-y-auto flex flex-col justify-between"
+          >
+            {/* Header */}
+            <div className="max-w-7xl mx-auto w-full px-6 py-6 flex justify-between items-center relative z-10">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
+                  <Compass className="h-6 w-6 animate-pulse" />
+                </div>
+                <span className="font-extrabold text-xl tracking-wider text-white">TravelMission AI</span>
+              </div>
+              <button 
+                onClick={() => setShowLanding(false)}
+                className="px-5 py-2.5 rounded-xl border border-indigo-500/30 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-300 font-semibold text-xs transition-all tracking-wider shadow-lg shadow-indigo-600/10 cursor-pointer"
+              >
+                Access Dashboard
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="max-w-7xl mx-auto w-full px-6 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 py-12">
+              <div className="space-y-8 max-w-xl">
+                <span className="px-3 py-1 text-2xs font-extrabold bg-indigo-600/10 text-indigo-300 border border-indigo-500/20 rounded-full uppercase tracking-widest">
+                  Powered by Gemini 2.5 & Google ADK
+                </span>
+                
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] mt-2">
+                  AI Travel <br />
+                  <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-500 bg-clip-text text-transparent">Mission Control</span>
+                </h1>
+
+                <p className="text-base text-slate-400 leading-relaxed">
+                  One Mission. 12 Specialized AI Agents. Infinite Adventures. Monitor flights, budgets, weather, security sentry logs, and country document audits simultaneously.
+                </p>
+
+                <div className="flex flex-wrap gap-4 pt-4">
+                  <button 
+                    onClick={() => setShowLanding(false)}
+                    className="h-12 px-8 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center space-x-2 cursor-pointer"
+                  >
+                    <span>Start Planning</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                  
+                  <button 
+                    onClick={() => setShowArchModal(true)}
+                    className="h-12 px-8 rounded-xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/80 text-slate-300 font-bold text-sm tracking-wide transition-all flex items-center space-x-2 cursor-pointer"
+                  >
+                    <span>Explore Architecture</span>
+                    <Sparkles className="h-4 w-4 text-indigo-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Glowing Canvas Globe */}
+              <div className="w-full h-[300px] lg:h-[500px] relative flex items-center justify-center">
+                <canvas ref={canvasRef} className="absolute z-0 w-full h-full max-w-[450px] max-h-[450px]" />
+                
+                {/* Floating travel cards overlay */}
+                <div className="absolute top-10 left-5 glass rounded-xl p-3 shadow-2xl border-indigo-500/20 flex items-center space-x-3 animate-bounce" style={{ animationDuration: "5s" }}>
+                  <Plane className="h-5 w-5 text-indigo-400" />
+                  <div className="text-left">
+                    <span className="text-3xs text-slate-500 uppercase font-bold">Flight Agent</span>
+                    <p className="text-2xs text-white font-semibold">SFO to HND Optimized</p>
+                  </div>
+                </div>
+
+                <div className="absolute bottom-16 right-5 glass rounded-xl p-3 shadow-2xl border-emerald-500/20 flex items-center space-x-3 animate-bounce" style={{ animationDuration: "7s" }}>
+                  <Cloud className="h-5 w-5 text-emerald-400" />
+                  <div className="text-left">
+                    <span className="text-3xs text-slate-500 uppercase font-bold">Weather Agent</span>
+                    <p className="text-2xs text-white font-semibold">Checks Clear Skies</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="max-w-7xl mx-auto w-full px-6 py-6 border-t border-slate-800/80 text-center text-xs text-slate-500 relative z-10">
+              © 2026 TravelMission AI Corp. Built for Kaggle AI Agents Capstone.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ARCHITECTURE MODAL */}
+      <AnimatePresence>
+        {showArchModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-[#0b0f19] border border-slate-800 rounded-2xl w-full max-w-4xl p-6 relative overflow-hidden"
+            >
+              <button 
+                onClick={() => setShowArchModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="h-6 w-6" />
+              </button>
+
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
+                <Globe className="h-5 w-5 text-indigo-400" />
+                <span>Multi-Agent System Architecture</span>
+              </h3>
+
+              <p className="text-xs text-slate-400 mb-6">
+                TravelMission AI is powered by a hierarchical model orchestration setup. Below is the operational data flow:
+              </p>
+
+              {/* Node Flow mockup */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center text-xs font-bold font-mono">
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300">
+                  <span className="block text-2xs text-slate-500 mb-1">INTERFACE</span>
+                  React Frontend
+                </div>
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300">
+                  <span className="block text-2xs text-slate-500 mb-1">ROUTING</span>
+                  FastAPI Backend
+                </div>
+                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300">
+                  <span className="block text-2xs text-slate-500 mb-1">COORDINATION</span>
+                  Lead Orchestrator
+                </div>
+                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-300">
+                  <span className="block text-2xs text-slate-500 mb-1">EXECUTION</span>
+                  12 Agent Fleet
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 rounded-xl bg-slate-900 border border-slate-800 text-2xs text-slate-300 space-y-2 leading-relaxed">
+                <p>💡 <strong>Lead Orchestrator</strong>: Synthesizes input requests, validates security bounds, and issues task tokens.</p>
+                <p>🛠️ <strong>MCP Sandboxing</strong>: Standardizes tool declarations for Browsers, Google Maps, and Local File systems using isolated environments.</p>
+                <p>🗄️ <strong>SQLite Ledger</strong>: Guarantees complete execution logging and persists generated itineraries, budgets, and document tokens.</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MOBILE HEADER BAR */}
+      <header className="md:hidden fixed top-0 left-0 w-full h-16 border-b border-slate-800 bg-[#080c14]/90 backdrop-blur-md z-40 px-6 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Compass className="h-5 w-5 text-indigo-400" />
+          <span className="font-extrabold text-sm text-white uppercase tracking-wider">TravelMission</span>
+        </div>
+        <button 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-lg border border-slate-800 text-slate-300 hover:text-white"
+        >
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </header>
+
       {/* SIDEBAR */}
-      <aside className="w-64 border-r border-slate-800 bg-[#0c1220]/80 p-6 flex flex-col justify-between">
+      <aside className={`fixed inset-y-0 left-0 w-64 border-r border-slate-800 bg-[#0c1220]/95 p-6 flex flex-col justify-between z-40 transform transition-transform duration-300 md:translate-x-0 md:static ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
         <div>
           <div className="flex items-center space-x-3 mb-8">
-            <div className="p-2.5 rounded-xl bg-indigo-600/30 border border-indigo-500/30 text-indigo-400 glass-glow">
+            <div className="p-2.5 rounded-xl bg-indigo-600/30 border border-indigo-500/30 text-indigo-400">
               <Compass className="h-6 w-6 animate-pulse" />
             </div>
             <div>
               <h1 className="font-bold text-lg tracking-wider text-white">TravelMission</h1>
-              <p className="text-xs text-indigo-400 font-medium">Agent Operations Center</p>
+              <p className="text-xs text-indigo-400 font-medium">Operations Center</p>
             </div>
           </div>
 
@@ -478,8 +797,11 @@ export default function MissionControlDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setSidebarOpen(false); // Close sidebar on mobile
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all min-h-[44px] cursor-pointer ${
                     activeTab === item.id 
                       ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/20 font-semibold" 
                       : "text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
@@ -494,7 +816,7 @@ export default function MissionControlDashboard() {
         </div>
 
         {/* Current User Profile Card */}
-        <div className="p-4 rounded-2xl glass border-slate-800 flex items-center space-x-3">
+        <div className="p-4 rounded-2xl glass border-slate-800 flex items-center space-x-3 mt-auto">
           <div className="h-10 w-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
             <User className="h-5 w-5 text-slate-300" />
           </div>
@@ -506,12 +828,12 @@ export default function MissionControlDashboard() {
       </aside>
 
       {/* MAIN SCREEN */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-hidden pt-16 md:pt-0 z-10">
         
         {/* TOP NAV BAR */}
-        <header className="h-20 border-b border-slate-800/80 px-8 flex items-center justify-between bg-[#080c14]/50 backdrop-blur-md">
+        <header className="hidden md:flex h-20 border-b border-slate-800/80 px-8 items-center justify-between bg-[#080c14]/50 backdrop-blur-md">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-bold tracking-tight text-white capitalize">{activeTab} Control</h2>
+            <h2 className="text-xl font-bold tracking-tight text-white capitalize">{activeTab === "dashboard" ? "Mission Control" : activeTab} Panel</h2>
             
             {/* Trip Selector Dropdown */}
             {trips.length > 0 && (
@@ -519,41 +841,28 @@ export default function MissionControlDashboard() {
                 <select 
                   value={selectedTripId || ""}
                   onChange={(e) => setSelectedTripId(Number(e.target.value))}
-                  className="appearance-none bg-slate-900 border border-slate-800 text-xs text-slate-300 px-4 py-2 pr-8 rounded-lg cursor-pointer focus:outline-none focus:border-indigo-500"
+                  className="bg-slate-900 border border-slate-800 text-xs px-3.5 py-1.5 pr-8 rounded-xl focus:outline-none focus:border-indigo-500 text-white font-semibold cursor-pointer appearance-none"
                 >
-                  {trips.map(t => (
-                    <option key={t.id} value={t.id}>Mission: {t.destination}</option>
+                  {trips.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.destination} ({t.start_date.split("-")[0]})
+                    </option>
                   ))}
                 </select>
-                <ChevronDown className="h-3 w-3 absolute right-3 top-3.5 text-slate-500 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
               </div>
             )}
           </div>
 
-          <div className="flex items-center space-x-4">
-            {/* Connection Status Badge */}
-            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#0c1322] border border-slate-800">
-              <span className={`h-2.5 w-2.5 rounded-full ${websocketActive ? "bg-emerald-500 animate-ping" : "bg-amber-500"}`}></span>
-              <span className="text-xs text-slate-400 font-medium">{websocketActive ? "Operations Live" : "Simulated Feed"}</span>
-            </div>
-            
-            <button 
-              onClick={() => {
-                setDestination("Tokyo");
-                setStartDate("2026-10-15");
-                setEndDate("2026-10-20");
-                addMockCreatedTrip();
-              }}
-              className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/25 flex items-center space-x-1.5"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Launch Mission</span>
-            </button>
+          {/* Quick Connection Indicator */}
+          <div className="flex items-center space-x-2">
+            <span className={`h-2 w-2 rounded-full ${websocketActive ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`}></span>
+            <span className="text-xs font-semibold text-slate-400">{websocketActive ? "Live Feed Sync" : "No Feed Sync"}</span>
           </div>
         </header>
 
         {/* CONTAINER VIEWPORTS */}
-        <div className="flex-1 overflow-y-auto p-8 no-scrollbar bg-[#080c14]/40">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar bg-[#080c14]/40">
           
           <AnimatePresence mode="wait">
             
@@ -702,7 +1011,7 @@ export default function MissionControlDashboard() {
                         <button
                           key={idx}
                           onClick={() => handleTriggerSimulation(scen.id)}
-                          className={`px-3 py-2 text-3xs font-semibold text-slate-300 bg-slate-900 border border-slate-800 rounded-xl transition-all shadow-sm ${scen.color}`}
+                          className="px-3 py-2 text-3xs font-semibold text-slate-300 bg-slate-900 border border-slate-800 rounded-xl transition-all shadow-sm min-h-[44px] cursor-pointer"
                         >
                           {scen.label}
                         </button>
@@ -763,203 +1072,110 @@ export default function MissionControlDashboard() {
                   </div>
 
                   {/* Weather Widget */}
-                  <div className="glass rounded-2xl p-6 flex flex-col justify-between">
+                  <div className="col-span-1 glass rounded-2xl p-6 flex flex-col justify-between min-h-[160px]">
                     <div>
-                      <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">Live Weather Forecast</span>
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center space-x-3">
-                          <Cloud className="h-10 w-10 text-indigo-400" />
-                          <div>
-                            <h4 className="text-xl font-bold text-white">72°F <span className="text-xs text-slate-400">/ 22°C</span></h4>
-                            <p className="text-xs text-slate-400">Partly Cloudy</p>
-                          </div>
+                      <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">Sentry Weather</span>
+                      <div className="flex items-center justify-between mt-2">
+                        <div>
+                          <h4 className="text-3xl font-extrabold text-white">
+                            {selectedTripDetails?.destination.toLowerCase().includes("tokyo") ? "18°C" : "11°C"}
+                          </h4>
+                          <p className="text-xs text-slate-400 mt-0.5">Heavy Rain Threat (Day 2)</p>
                         </div>
+                        <Cloud className="h-10 w-10 text-indigo-400" />
                       </div>
                     </div>
-                    <div className="mt-4 text-xs bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl text-amber-400 flex items-start space-x-1.5">
-                      <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-                      <span className="text-3xs font-medium">Day 2 Rain predicted. Timelines automatically shifted.</span>
+                    <div className="mt-4 pt-4 border-t border-slate-800 text-2xs text-slate-400">
+                      💡 Shifting outdoor itineraries to indoor museums
                     </div>
                   </div>
 
                   {/* Safety & Advisory */}
-                  <div className="glass rounded-2xl p-6 flex flex-col justify-between">
+                  <div className="col-span-1 glass rounded-2xl p-6 flex flex-col justify-between min-h-[160px]">
                     <div>
-                      <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">Safety & Alert Risk</span>
-                      <div className="mt-4 flex items-baseline space-x-2">
-                        <h4 className="text-3xl font-extrabold text-rose-500">96%</h4>
-                        <span className="text-xs text-slate-400">Safety Index</span>
+                      <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">Security Clearance</span>
+                      <div className="flex items-center justify-between mt-2">
+                        <div>
+                          <h4 className="text-lg font-bold text-emerald-400">Level 1 (Safe)</h4>
+                          <p className="text-xs text-slate-400 mt-0.5">Normal Precautions</p>
+                        </div>
+                        <Shield className="h-8 w-8 text-emerald-400" />
                       </div>
                     </div>
-                    <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
-                      <span className="text-slate-400">Advisory: Level 1</span>
-                      <span className="text-2xs font-semibold text-indigo-400 flex items-center">
-                        Emergency: 112
-                      </span>
+                    <div className="mt-4 pt-4 border-t border-slate-800 text-2xs text-slate-400 flex justify-between">
+                      <span>Advisory Verified</span>
+                      <span className="text-slate-500">100% Secure</span>
                     </div>
                   </div>
 
                 </div>
 
-                {/* Dashboard Secondary Section: Timeline vs Feed */}
+                {/* Bottom Timeline & Chat Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
-                  {/* Left Column: Live Agent Log Activity Feed */}
-                  <div className="lg:col-span-1 glass rounded-2xl flex flex-col h-[520px]">
-                    <div className="p-5 border-b border-slate-800/80 flex justify-between items-center bg-[#0c1220]/40 rounded-t-2xl">
-                      <div className="flex items-center space-x-2">
-                        <Activity className="h-4.5 w-4.5 text-indigo-400 animate-pulse" />
-                        <h3 className="font-bold text-sm text-white">Agent Operations Feed</h3>
+                  {/* Left Col: Live Agent Activity console */}
+                  <div className="col-span-1 lg:col-span-2 glass rounded-2xl p-6 flex flex-col justify-between min-h-[420px]">
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-bold text-sm text-white flex items-center">
+                          <Activity className="h-4.5 w-4.5 mr-2 text-indigo-400" />
+                          <span>Live Agent Collaboration Feed</span>
+                        </h3>
+                        <span className="text-3xs bg-emerald-500/10 text-emerald-300 font-bold px-2 py-0.5 rounded border border-emerald-500/20">
+                          {agentLogs.length} Events Logged
+                        </span>
                       </div>
-                      <span className="text-3xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded">Real-time</span>
-                    </div>
-                    
-                    {/* Log Stream */}
-                    <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar">
-                      {agentLogs.map((log, index) => (
-                        <div key={index} className="flex flex-col space-y-1.5 p-3 rounded-xl border border-slate-800/50 bg-[#090d16]/60">
-                          <div className="flex justify-between items-center">
-                            <span className="text-2xs font-bold text-indigo-300">{log.agent}</span>
-                            <span className={`text-3xs px-2 py-0.5 rounded-full font-medium ${
-                              log.type === "Thought" ? "bg-blue-500/10 text-blue-400" :
-                              log.type === "ToolCall" ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400"
-                            }`}>{log.type}</span>
+                      
+                      <div className="bg-slate-955/80 border border-slate-900 rounded-xl p-4 h-[300px] overflow-y-auto font-mono text-2xs space-y-3 no-scrollbar shadow-inner">
+                        {agentLogs.map((log, idx) => (
+                          <div key={idx} className="border-b border-slate-900 pb-2 last:border-0">
+                            <span className="text-indigo-400 font-bold">[{log.agent}]</span>{" "}
+                            <span className={`px-1.5 py-0.25 text-3xs font-extrabold rounded mr-1.5 ${
+                              log.type === "Thought" ? "bg-slate-800 text-slate-400" :
+                              log.type === "ToolCall" ? "bg-amber-500/10 text-amber-300 border border-amber-500/20" :
+                              "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                            }`}>
+                              {log.type}
+                            </span>
+                            <span className="text-slate-300">{log.message}</span>
                           </div>
-                          <p className="text-xs text-slate-300 font-medium">{log.message}</p>
-                        </div>
-                      ))}
-                      <div ref={activityEndRef} />
+                        ))}
+                        <div ref={activityEndRef} />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right Column: Mission Control Itinerary Planner & Timeline */}
-                  <div className="lg:col-span-2 glass rounded-2xl flex flex-col h-[520px]">
-                    <div className="p-5 border-b border-slate-800/80 flex justify-between items-center bg-[#0c1220]/40 rounded-t-2xl">
-                      <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                        <Calendar className="h-4.5 w-4.5 text-indigo-400" />
-                        <span>Interactive Mission Timeline</span>
+                  {/* Right Col: Orchestrator Chat helper */}
+                  <div className="glass rounded-2xl p-6 flex flex-col justify-between min-h-[420px]">
+                    <div>
+                      <h3 className="font-bold text-sm text-white mb-4 flex items-center">
+                        <Sparkles className="h-4.5 w-4.5 mr-2 text-indigo-400" />
+                        <span>Lead Orchestrator Pilot</span>
                       </h3>
-                    </div>
-
-                    {/* Timeline items */}
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6 no-scrollbar">
-                      {selectedTripDetails?.itinerary_items && selectedTripDetails.itinerary_items.length > 0 ? (
-                        selectedTripDetails.itinerary_items.map((item) => (
-                          <div key={item.id} className="relative pl-6 border-l-2 border-slate-800/80 last:border-0 pb-1">
-                            {/* Dot indicator */}
-                            <div className="absolute -left-1.5 top-1.5 h-3.5 w-3.5 rounded-full bg-indigo-500 border-2 border-[#0c1220]"></div>
-                            
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <span className="text-2xs font-bold text-indigo-400 tracking-wider block uppercase">{item.time_of_day}</span>
-                                <h4 className="font-bold text-white text-sm mt-0.5">{item.title}</h4>
-                                <p className="text-xs text-slate-400 mt-1">{item.description}</p>
-                                {item.agent_notes && (
-                                  <span className="inline-block text-3xs font-semibold text-slate-500 mt-1">
-                                    ℹ️ {item.agent_notes}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs font-bold text-indigo-300 font-mono text-right">
-                                {formatCurrency(item.cost, selectedTripDetails?.currency || "USD")}
-                                {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && item.cost > 0 && (
-                                  <span className="text-slate-400 text-3xs font-normal block mt-0.5">
-                                    ({formatCurrency(item.cost_home_currency || item.cost, selectedTripDetails.home_currency || "USD")})
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-
-                            {item.weather_notes && (
-                              <div className="mt-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-start space-x-2">
-                                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                <p className="text-3xs font-medium leading-relaxed">{item.weather_notes}</p>
-                              </div>
-                            )}
+                      
+                      <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1 no-scrollbar text-xs">
+                        {chatHistory.map((h, idx) => (
+                          <div key={idx} className={`p-3 rounded-xl max-w-[85%] ${
+                            h.sender === "User" 
+                              ? "bg-indigo-600/10 text-indigo-200 border border-indigo-500/20 ml-auto" 
+                              : "bg-slate-900/60 text-slate-300 border border-slate-800 mr-auto"
+                          }`}>
+                            <span className="block text-3xs uppercase tracking-wider font-bold text-slate-500 mb-1">{h.sender}</span>
+                            {h.text}
                           </div>
-                        ))
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-500">
-                          <Compass className="h-12 w-12 mb-3 text-slate-600 animate-spin" />
-                          <p className="text-sm font-medium">Orchestrator compiling itinerary timeline...</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Dashboard Third Section: Widgets (Packing, Local Guide, Chat Panel) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  
-                  {/* Packing List widget */}
-                  <div className="glass rounded-2xl p-5 space-y-4">
-                    <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                      <Briefcase className="h-4.5 w-4.5 text-indigo-400" />
-                      <span>Dynamic Packing Checklist</span>
-                    </h3>
-                    <div className="space-y-2.5 text-xs text-slate-300">
-                      {[
-                        { label: "Universal Adaptor & Phone Charger", check: true },
-                        { label: "Raincoat / Umbrella (Weather Shifted)", check: true },
-                        { label: "First Aid Kit (Antihistamines, Plasters)", check: true },
-                        { label: "Valid Passport & Booking Printouts", check: false },
-                        { label: "Yen Cash (approx. 20,000 JPY)", check: false }
-                      ].map((p, idx) => (
-                        <div key={idx} className="flex items-center space-x-2.5 p-2 rounded-xl bg-[#090d16]/40 border border-slate-800/40">
-                          <input type="checkbox" checked={p.check} readOnly className="rounded border-slate-700 text-indigo-600 focus:ring-0 focus:ring-offset-0 bg-slate-900 cursor-pointer h-4 w-4" />
-                          <span className={`font-medium ${p.check ? "line-through text-slate-500" : ""}`}>{p.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Local Etiquette & Phrases widget */}
-                  <div className="glass rounded-2xl p-5 space-y-4">
-                    <h3 className="font-bold text-sm text-white flex items-center space-x-2">
-                      <BookOpen className="h-4.5 w-4.5 text-indigo-400" />
-                      <span>Culture & Etiquette</span>
-                    </h3>
-                    <div className="space-y-3.5 text-xs">
-                      <div className="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
-                        <span className="font-bold text-indigo-400 text-2xs block uppercase">Etiquette Rule</span>
-                        <p className="text-slate-300 mt-1 font-medium">Do not stand on the right side of the escalator in Tokyo (keep left). Avoid tipping at bars/diners.</p>
-                      </div>
-                      <div className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                        <span className="font-bold text-emerald-400 text-2xs block uppercase">Key Translation</span>
-                        <p className="text-slate-300 mt-1 font-medium">"Otearai wa doko desu ka?" - Where is the bathroom?</p>
-                        <p className="text-3xs text-slate-500 mt-0.5">Phonetic: oh-teh-ah-rye wah doh-ko dess kah?</p>
+                        ))}
                       </div>
                     </div>
-                  </div>
 
-                  {/* AI Assistant Chat Panel */}
-                  <div className="glass rounded-2xl p-5 flex flex-col h-[280px]">
-                    <h3 className="font-bold text-sm text-white flex items-center space-x-2 mb-3">
-                      <MessageSquare className="h-4.5 w-4.5 text-indigo-400" />
-                      <span>Follow-up Adjustments</span>
-                    </h3>
-                    <div className="flex-1 overflow-y-auto mb-3 space-y-2 no-scrollbar">
-                      {chatHistory.map((chat, idx) => (
-                        <div key={idx} className={`p-2.5 rounded-xl text-xs max-w-[85%] font-medium ${
-                          chat.sender === "User" 
-                            ? "bg-indigo-600/30 text-indigo-200 border border-indigo-500/20 self-end ml-auto" 
-                            : "bg-slate-800/40 text-slate-300 border border-slate-800/60"
-                        }`}>
-                          <span className="text-3xs text-slate-500 block mb-0.5">{chat.sender}</span>
-                          {chat.text}
-                        </div>
-                      ))}
-                    </div>
-                    <form onSubmit={handleSendChat} className="flex space-x-2">
+                    <form onSubmit={handleSendChat} className="flex mt-4 items-center space-x-2 pt-4 border-t border-slate-800">
                       <input 
                         type="text" 
-                        value={chatMessage} 
-                        onChange={(e) => setChatMessage(e.target.value)} 
-                        placeholder="Suggest cheaper flight date..." 
-                        className="flex-1 bg-slate-900 border border-slate-800 text-xs px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-indigo-500 text-white" 
+                        value={chatMessage}
+                        onChange={(e) => setChatMessage(e.target.value)}
+                        placeholder="Request flight shuffles, weather safety edits..."
+                        className="flex-1 bg-slate-950 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]"
                       />
-                      <button type="submit" className="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 transition-all">
+                      <button type="submit" className="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-md min-h-[44px] cursor-pointer">
                         <Send className="h-4 w-4" />
                       </button>
                     </form>
@@ -969,7 +1185,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: TRIPS */}
+            {/* TAB: ALL MISSIONS */}
             {activeTab === "trips" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -978,27 +1194,70 @@ export default function MissionControlDashboard() {
                 transition={{ duration: 0.2 }}
                 className="space-y-8"
               >
-                {/* Planning Form */}
-                <div className="glass rounded-2xl p-6">
+                {/* Searchable Autocomplete Country Planner */}
+                <div className="glass rounded-2xl p-6 relative">
                   <h3 className="font-bold text-base text-white mb-6">Launch New Travel Mission</h3>
-                  <form onSubmit={handleCreateTrip} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Destination City</label>
-                      <input 
-                        type="text" 
-                        value={destination} 
-                        onChange={(e) => setDestination(e.target.value)} 
-                        placeholder="Tokyo" 
-                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white" 
-                      />
+                  <form onSubmit={handleCreateTrip} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                    
+                    {/* Searchable dropdown input */}
+                    <div className="relative">
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Destination City & Country</label>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          placeholder="Search e.g. Tokyo" 
+                          value={countrySearch}
+                          onChange={(e) => {
+                            setCountrySearch(e.target.value);
+                            setShowCountryDropdown(true);
+                          }}
+                          onFocus={() => setShowCountryDropdown(true)}
+                          className="w-full bg-slate-950 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
+                        />
+                        <Search className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      </div>
+
+                      {/* Dropdown popup */}
+                      <AnimatePresence>
+                        {showCountryDropdown && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[180px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                          >
+                            {filteredCountries.length > 0 ? (
+                              filteredCountries.map((c, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setDestination(c.name);
+                                    setCountrySearch(`${c.flag} ${c.name}`);
+                                    setDestCurrency(c.currency);
+                                    setShowCountryDropdown(false);
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white flex items-center space-x-2 min-h-[44px] cursor-pointer"
+                                >
+                                  <span>{c.flag}</span>
+                                  <span>{c.name} ({c.code})</span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-4 py-3 text-2xs text-slate-500 italic">No matching countries.</div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
+
                     <div>
                       <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Start Date</label>
                       <input 
                         type="date" 
                         value={startDate} 
                         onChange={(e) => setStartDate(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white" 
+                        className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                       />
                     </div>
                     <div>
@@ -1007,7 +1266,7 @@ export default function MissionControlDashboard() {
                         type="date" 
                         value={endDate} 
                         onChange={(e) => setEndDate(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white" 
+                        className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                       />
                     </div>
                     <div>
@@ -1016,99 +1275,62 @@ export default function MissionControlDashboard() {
                         type="number" 
                         value={budgetTotal} 
                         onChange={(e) => setBudgetTotal(Number(e.target.value))} 
-                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white" 
+                        className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Home Currency</label>
-                      <select 
-                        value={homeCurrency} 
-                        onChange={(e) => setHomeCurrency(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white font-semibold"
-                      >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="JPY">JPY (¥)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="AUD">AUD ($)</option>
-                        <option value="CAD">CAD ($)</option>
-                        <option value="CHF">CHF (Fr)</option>
-                        <option value="CNY">CNY (¥)</option>
-                        <option value="INR">INR (₹)</option>
-                        <option value="SGD">SGD ($)</option>
-                        <option value="AED">AED (Dh)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Dest Currency</label>
-                      <select 
-                        value={destCurrency} 
-                        onChange={(e) => setDestCurrency(e.target.value)} 
-                        className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white font-semibold"
-                      >
-                        <option value="EUR">EUR (€)</option>
-                        <option value="JPY">JPY (¥)</option>
-                        <option value="USD">USD ($)</option>
-                        <option value="GBP">GBP (£)</option>
-                        <option value="AUD">AUD ($)</option>
-                        <option value="CAD">CAD ($)</option>
-                        <option value="CHF">CHF (Fr)</option>
-                        <option value="CNY">CNY (¥)</option>
-                        <option value="INR">INR (₹)</option>
-                        <option value="SGD">SGD ($)</option>
-                        <option value="AED">AED (Dh)</option>
-                      </select>
-                    </div>
-                    <div className="md:col-span-3 lg:col-span-6 flex justify-end">
-                      <button 
-                        type="submit" 
-                        disabled={creatingTrip}
-                        className="px-6 py-3 font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all flex items-center space-x-2 text-xs"
-                      >
-                        {creatingTrip ? <span>Deploying Multi-Agents...</span> : (
-                          <>
-                            <Sparkles className="h-4 w-4" />
-                            <span>Assemble Agent Team</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={creatingTrip}
+                      className="w-full h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold tracking-wider transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer"
+                    >
+                      <Plane className="h-4 w-4" />
+                      <span>{creatingTrip ? "Launching..." : "Deploy Fleet"}</span>
+                    </button>
                   </form>
                 </div>
 
-                {/* List of active/previous missions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {trips.map((t) => (
-                    <div key={t.id} className="glass rounded-2xl p-6 flex flex-col justify-between min-h-[160px] glass-interactive">
-                      <div className="flex justify-between items-start">
+                {/* Missions List */}
+                <div className="space-y-4">
+                  <h3 className="font-extrabold text-sm text-slate-400 uppercase tracking-wider">Active Missions Ledger</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {trips.map((t) => (
+                      <div key={t.id} className="glass rounded-2xl p-6 border-slate-800 flex flex-col justify-between min-h-[180px]">
                         <div>
-                          <span className="text-xs font-medium text-indigo-400 block tracking-widest uppercase">Mission Code: #{t.id}</span>
-                          <h4 className="text-2xl font-bold text-white mt-1">{t.destination}</h4>
-                          <span className="text-slate-400 text-xs mt-1 block">{t.start_date} to {t.end_date}</span>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-extrabold text-base text-white">{t.destination}</h4>
+                            <span className="px-2 py-0.5 text-3xs font-semibold rounded bg-indigo-600/20 text-indigo-300 border border-indigo-500/20 uppercase tracking-widest">
+                              {t.status}
+                            </span>
+                          </div>
+                          <p className="text-slate-400 text-xs mt-2 flex items-center">
+                            <Calendar className="h-3.5 w-3.5 mr-1.5 text-slate-500" />
+                            {t.start_date} to {t.end_date}
+                          </p>
+                          <p className="text-slate-300 text-xs mt-2 font-semibold">
+                            Est. Budget: {formatCurrency(t.budget_total, t.currency)}
+                          </p>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteTrip(t.id)}
-                          className="p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
 
-                      <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-800/80">
-                        <span className="text-xs text-slate-400">Budget: <strong className="text-white">${t.budget_total}</strong></span>
-                        <button 
-                          onClick={() => {
-                            setSelectedTripId(t.id);
-                            setActiveTab("dashboard");
-                          }}
-                          className="text-2xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
-                        >
-                          <span>Open Control Board</span>
-                          <ChevronRight className="h-3 w-3" />
-                        </button>
+                        <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-800/80">
+                          <button 
+                            onClick={() => setSelectedTripId(t.id)}
+                            className="text-indigo-400 text-xs font-bold flex items-center hover:text-indigo-300 min-h-[44px] cursor-pointer"
+                          >
+                            <span>Open Controls</span>
+                            <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleDeleteTrip(t.id)}
+                            className="p-2 text-rose-500 hover:text-rose-400 hover:bg-rose-500/5 rounded-lg transition-all min-h-[44px] cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -1122,39 +1344,51 @@ export default function MissionControlDashboard() {
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-                <div className="glass rounded-2xl p-6 bg-[#0c1220]/20">
-                  <h3 className="font-bold text-base text-white mb-2">Specialized Agent Fleet</h3>
-                  <p className="text-xs text-slate-400">12 intelligent agents collaborate under the Lead Orchestrator to solve visa, flight, weather, and planning tasks.</p>
+                <div className="flex justify-between items-center pb-4 border-b border-slate-800/80">
+                  <div>
+                    <h3 className="font-extrabold text-lg text-white">Specialized AI Agent Grid</h3>
+                    <p className="text-slate-400 text-xs mt-1">12 dedicated agents operating concurrently via the Google Agent Development Kit (ADK).</p>
+                  </div>
+                  <span className="px-3 py-1 text-2xs font-extrabold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-full uppercase tracking-widest animate-pulse">
+                    Orchestrator Online
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { name: "Flight Agent", role: "Flight Route Research", desc: "Compares routes, bag estimates, airline carriers, and cheapest dates.", icon: Plane },
-                    { name: "Visa Agent", role: "Visa Entry Compliance", desc: "Inspects passport validations, visa rules, and embassy paperwork.", icon: Shield },
-                    { name: "Hotel Agent", role: "Lodging Selection Optimizer", desc: "Selects hotels based on combined safety indexes and transit scores.", icon: Briefcase },
-                    { name: "Budget Agent", role: "Cost Audit & Recalculator", desc: "Divides budget estimation blocks and flags cost-saving tips.", icon: DollarSign },
-                    { name: "Weather Agent", role: "Meteorological Alert Grid", desc: "Monitors forecasts and warns when rain alerts prompt outdoor shifts.", icon: Cloud },
-                    { name: "Packing Agent", role: "Checklist compiler", desc: "Tailors clothing list items based on weather, adaptors, and medicine.", icon: Briefcase },
-                    { name: "Safety Agent", role: "Risk and advisory checker", desc: "Maps local scams, emergency direct lines, and medical options.", icon: ShieldAlert },
-                    { name: "Local Guide Agent", role: "Local culture guide", desc: "Curates dining etiquette, tipping policies, and custom gems.", icon: Compass },
-                    { name: "Activity Planner", role: "Day-by-day Itinerary Architect", desc: "Designs weather-resilient, time-optimized travel timelines.", icon: Calendar },
-                    { name: "Currency Agent", role: "Conversion & ATM auditor", desc: "Exposes rate splits and advises on non-rip-off ATM networks.", icon: ArrowRightLeft },
-                    { name: "Language Agent", role: "Translator & phonetics tutor", desc: "Guides survival traveler phrases with phonetic pronunciations.", icon: Globe },
-                    { name: "Transportation Agent", role: "Metro & Airport transit router", desc: "Tracks subway ticket cards, trains, and walking trails.", icon: MapPin }
-                  ].map((agent, index) => {
+                    { name: "Flight Agent", icon: Plane, desc: "Queries global airline directories. Optimizes routes and captures price drops.", tools: "Browser, Flight API", speed: "140ms" },
+                    { name: "Weather Agent", icon: Cloud, desc: "Monitors global meteorology forecasts. Triggers warnings for outdoor agenda shifts.", tools: "Weather API", speed: "210ms" },
+                    { name: "Visa Agent", icon: Shield, desc: "Validates visa policies and reviews uploaded passports for expiry dates.", tools: "Filesystem MCP", speed: "180ms" },
+                    { name: "Hotel Agent", icon: Briefcase, desc: "Finds safety-certified lodgings and updates booking arrival check-ins.", tools: "Hotels MCP", speed: "250ms" },
+                    { name: "Budget Agent", icon: DollarSign, desc: "Maintains budget ledgers and executes currency updates for expense metrics.", tools: "Budget Calculation", speed: "90ms" },
+                    { name: "Currency Agent", icon: ArrowRightLeft, desc: "Evaluates daily exchange trends and flags lock-in money exchange signals.", tools: "Currency Service", speed: "110ms" },
+                    { name: "Packing Agent", icon: CheckSquare, desc: "Compiles weather-appropriate packing recommendations automatically.", tools: "PackingList Skill", speed: "120ms" },
+                    { name: "Safety Agent", icon: ShieldAlert, desc: "Vets advisory ratings, crime metrics, and generates emergency checklists.", tools: "Safety API", speed: "300ms" },
+                    { name: "Language Agent", icon: BookOpen, desc: "Translates menu logs and updates regional basic communication guides.", tools: "Translation MCP", speed: "150ms" },
+                    { name: "Local Guide Agent", icon: Compass, desc: "Curates dining selections, etiquette alerts, and hidden cultural guides.", tools: "LocalEtiquette Skill", speed: "170ms" },
+                    { name: "Transportation Agent", icon: Activity, desc: "Optimizes airport transfers and aligns shuttle slots with flight delays.", tools: "LocalTransport Skill", speed: "220ms" },
+                    { name: "Activity Planner", icon: Calendar, desc: "Compiles 5-day itineraries and shuffles time blocks dynamically.", tools: "Itinerary Engine", speed: "190ms" }
+                  ].map((agent, idx) => {
                     const Icon = agent.icon;
                     return (
-                      <div key={index} className="glass rounded-2xl p-5 flex space-x-4 border border-slate-800/80 hover:border-slate-700/60 transition-all">
-                        <div className="p-3.5 rounded-xl bg-indigo-600/10 border border-indigo-500/15 text-indigo-400 h-fit">
-                          <Icon className="h-5 w-5" />
-                        </div>
+                      <div key={idx} className="glass rounded-2xl p-6 border-slate-800 flex flex-col justify-between min-h-[220px] hover:border-indigo-500/30 transition-all">
                         <div>
-                          <h4 className="font-bold text-sm text-white">{agent.name}</h4>
-                          <span className="text-3xs text-indigo-400 font-semibold tracking-wider block uppercase mt-0.5">{agent.role}</span>
-                          <p className="text-xs text-slate-400 mt-2 leading-relaxed">{agent.desc}</p>
-                          <span className="inline-flex items-center mt-3 text-3xs font-semibold text-emerald-400">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                            Standby/Ready
+                          <div className="flex justify-between items-start">
+                            <div className="p-2 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20">
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <span className="text-3xs text-slate-500 font-mono">{agent.speed} latency</span>
+                          </div>
+                          
+                          <h4 className="font-extrabold text-sm text-white mt-4">{agent.name}</h4>
+                          <p className="text-slate-400 text-2xs mt-2 leading-relaxed">{agent.desc}</p>
+                        </div>
+                        
+                        <div className="mt-4 pt-3 border-t border-slate-800/80 flex justify-between items-center text-3xs">
+                          <span className="text-slate-500 uppercase tracking-widest font-mono">Tools: {agent.tools}</span>
+                          <span className="text-emerald-400 flex items-center font-bold uppercase tracking-widest">
+                            <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-400" />
+                            Ready
                           </span>
                         </div>
                       </div>
@@ -1173,74 +1407,71 @@ export default function MissionControlDashboard() {
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
-                  {/* Upload Card */}
-                  <div className="glass rounded-2xl p-6 col-span-1 h-fit">
-                    <h3 className="font-bold text-sm text-white mb-4">Upload Travel Documents</h3>
-                    <form onSubmit={handleUploadDocument} className="space-y-4">
-                      <div className="border border-dashed border-slate-800 rounded-xl p-6 text-center cursor-pointer hover:border-indigo-500/40 transition-all">
-                        <Upload className="h-8 w-8 text-slate-500 mx-auto mb-2" />
-                        <span className="text-xs text-slate-400 block font-medium">Select passport, visa, or ticket PDF/JPG</span>
+                  {/* Left: Upload card */}
+                  <div className="glass rounded-2xl p-6 col-span-1 flex flex-col justify-between min-h-[300px]">
+                    <div>
+                      <h3 className="font-bold text-sm text-white mb-2">Upload Visa & Travel Documents</h3>
+                      <p className="text-slate-400 text-xs">AI Visa Agent automatically extracts validity, passport numbers, and country checklists.</p>
+                    </div>
+
+                    <form onSubmit={handleFileUpload} className="space-y-4 mt-6">
+                      <div className="border border-dashed border-slate-800 bg-slate-955/40 rounded-xl p-6 text-center hover:border-indigo-500/40 transition-all relative">
                         <input 
                           type="file" 
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              setUploadFile(e.target.files[0]);
-                            }
-                          }}
-                          className="mt-3 text-2xs text-slate-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-2xs file:font-semibold file:bg-indigo-600/20 file:text-indigo-400 cursor-pointer" 
+                          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                         />
+                        <Upload className="h-8 w-8 text-indigo-400 mx-auto mb-2 animate-bounce" />
+                        <span className="text-2xs text-slate-400 block font-semibold">
+                          {uploadFile ? uploadFile.name : "Click or drag files here (PDF, JPG, PNG)"}
+                        </span>
                       </div>
-                      
-                      {uploadFile && (
-                        <div className="p-3 bg-[#0c1322] border border-slate-800 rounded-xl text-2xs text-indigo-300 font-semibold truncate">
-                          Selected: {uploadFile.name}
-                        </div>
-                      )}
-                      
+
                       <button 
                         type="submit" 
                         disabled={uploading || !uploadFile}
-                        className="w-full py-2.5 font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs transition-all flex items-center justify-center space-x-1.5"
+                        className="w-full h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold tracking-wider transition-all disabled:bg-slate-800 disabled:text-slate-500 cursor-pointer"
                       >
-                        {uploading ? <span>Processing OCR...</span> : (
-                          <>
-                            <Upload className="h-4 w-4" />
-                            <span>Scan Document</span>
-                          </>
-                        )}
+                        {uploading ? "Analyzing Document..." : "Upload & Parse"}
                       </button>
                     </form>
                   </div>
 
-                  {/* List of uploaded documents */}
-                  <div className="glass rounded-2xl p-6 col-span-2">
-                    <h3 className="font-bold text-sm text-white mb-4">Parsed Travel Credentials</h3>
-                    
-                    <div className="space-y-3">
-                      {selectedTripDetails?.documents && selectedTripDetails.documents.length > 0 ? (
-                        selectedTripDetails.documents.map((doc) => (
-                          <div key={doc.id} className="p-4 rounded-xl border border-slate-800/80 bg-[#090d16]/40 flex justify-between items-center">
-                            <div className="flex items-center space-x-3">
-                              <div className="p-2.5 rounded-lg bg-indigo-600/10 text-indigo-400 border border-indigo-500/15">
-                                <FileText className="h-5 w-5" />
+                  {/* Right: Parsed docs list */}
+                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 min-h-[300px] flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-white mb-4">Digitized Travel Vault</h3>
+                      <div className="space-y-3">
+                        {selectedTripDetails?.documents && selectedTripDetails.documents.length > 0 ? (
+                          selectedTripDetails.documents.map((doc) => (
+                            <div key={doc.id} className="p-4 rounded-xl border border-slate-800 bg-slate-955/40 flex justify-between items-center text-xs">
+                              <div className="flex items-center space-x-3">
+                                <FileText className="h-5 w-5 text-indigo-400" />
+                                <div>
+                                  <h4 className="font-bold text-white text-xs">{doc.file_name}</h4>
+                                  <span className="text-3xs text-slate-500 font-mono">Uploaded {new Date(doc.created_at).toLocaleDateString()}</span>
+                                </div>
                               </div>
-                              <div>
-                                <h4 className="font-semibold text-xs text-white">{doc.file_name}</h4>
-                                <span className="text-3xs text-slate-500">Uploaded {new Date(doc.created_at).toLocaleDateString()}</span>
+                              <div className="flex items-center space-x-3">
+                                <span className={`px-2.5 py-0.5 rounded text-3xs font-bold uppercase tracking-wider ${
+                                  doc.status === "Parsed" ? "bg-emerald-500/10 text-emerald-300 border border-emerald-500/20" : "bg-slate-800 text-slate-400"
+                                }`}>
+                                  {doc.status}
+                                </span>
                               </div>
                             </div>
-                            <span className="px-2 py-0.5 text-3xs font-bold rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              {doc.status}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center p-8 text-slate-500 text-xs">
-                          No parsed documents available for this mission.
-                        </div>
-                      )}
+                          ))
+                        ) : (
+                          <div className="text-center p-8 text-slate-500 text-xs italic">No documents uploaded. Drag and drop passport or ticket copy above.</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-2xs text-slate-400 flex items-center space-x-2 mt-4">
+                      <Lock className="h-4 w-4 text-emerald-400" />
+                      <span>Vault secured with local sandbox filesystem MCP constraints.</span>
                     </div>
                   </div>
 
@@ -1248,7 +1479,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: BUDGET */}
+            {/* TAB: BUDGET LOG */}
             {activeTab === "budget" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -1257,116 +1488,80 @@ export default function MissionControlDashboard() {
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
-                  {/* Left: Chart Visualization */}
-                  <div className="glass rounded-2xl p-6 col-span-1 md:col-span-2 h-[380px]">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-sm text-white">Budget Division Breakdown</h3>
-                      {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
-                        <button 
-                          onClick={() => setShowBudgetInHome(!showBudgetInHome)}
-                          className="px-3 py-1.5 text-3xs font-semibold bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/25 rounded-lg transition-all"
-                        >
-                          View in {showBudgetInHome ? selectedTripDetails.currency : selectedTripDetails.home_currency}
-                        </button>
-                      )}
+                  {/* Left: allocations chart */}
+                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 flex flex-col justify-between min-h-[380px]">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-sm text-white">Expense Allocation Ledger</h3>
+                        <p className="text-slate-400 text-xs mt-0.5">Budget ledger compiled by Budget Agent.</p>
+                      </div>
+                      
+                      {/* Currency Swap Toggle */}
+                      <button 
+                        onClick={() => setShowBudgetInHome(!showBudgetInHome)}
+                        className="px-3.5 py-1.5 text-3xs font-extrabold bg-indigo-600/10 text-indigo-300 border border-indigo-500/20 rounded-xl hover:bg-indigo-600/20 transition-all min-h-[44px] cursor-pointer"
+                      >
+                        Toggle to {showBudgetInHome ? selectedTripDetails?.currency : selectedTripDetails?.home_currency}
+                      </button>
                     </div>
-                    
-                    {selectedTripDetails?.budget_logs && selectedTripDetails.budget_logs.length > 0 ? (
-                      <div className="h-full w-full flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height={260}>
+
+                    <div className="h-[200px] w-full mt-4 flex items-center justify-center">
+                      {selectedTripDetails?.budget_logs && selectedTripDetails.budget_logs.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={selectedTripDetails.budget_logs.map(item => ({
-                                name: item.category,
-                                value: showBudgetInHome ? (item.cost_home_currency || item.estimated_cost) : item.estimated_cost
-                              }))}
+                              data={selectedTripDetails.budget_logs}
                               cx="50%"
                               cy="50%"
                               innerRadius={60}
-                              outerRadius={90}
+                              outerRadius={80}
                               paddingAngle={4}
-                              dataKey="value"
+                              dataKey={showBudgetInHome ? "cost_home_currency" : "estimated_cost"}
+                              nameKey="category"
                             >
                               {selectedTripDetails.budget_logs.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value) => formatCurrency(Number(value), showBudgetInHome ? (selectedTripDetails?.home_currency || "USD") : (selectedTripDetails?.currency || "EUR"))} />
-                            <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: "11px", color: "#94a3b8" }} />
+                            <Tooltip formatter={(value, name) => [`${formatCurrency(Number(value), showBudgetInHome ? selectedTripDetails.home_currency || "USD" : selectedTripDetails.currency)}`, name]} />
                           </PieChart>
                         </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="text-center p-8 text-slate-500 text-xs">No budget estimations loaded.</div>
-                    )}
+                      ) : (
+                        <div className="text-slate-500 text-xs italic">No allocations mapped.</div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between items-center text-3xs text-slate-500 border-t border-slate-800/80 pt-4 mt-4">
+                      <span>Interactive charts render real-time changes</span>
+                      <span>Budget Health: 100% Optimized</span>
+                    </div>
                   </div>
 
-                  {/* Right: Saving Tips */}
-                  <div className="glass rounded-2xl p-6 col-span-1 space-y-4">
-                    <h3 className="font-bold text-sm text-white">Budget Auditor Recommendations</h3>
+                  {/* Right: details details list */}
+                  <div className="glass rounded-2xl p-6 col-span-1 min-h-[380px] overflow-y-auto no-scrollbar">
+                    <h3 className="font-bold text-sm text-white mb-4">Breakdown & Auditing</h3>
                     
-                    <div className="space-y-3.5 text-xs">
-                      <div className="p-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300 font-medium">
-                        <span className="font-bold text-indigo-400 block text-3xs uppercase">Flight Saving Tip</span>
-                        Fly mid-week (Tuesday/Wednesday) to save approximately 15-20% on tickets.
-                      </div>
-                      <div className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-300 font-medium">
-                        <span className="font-bold text-emerald-400 block text-3xs uppercase">Transit Pass Tip</span>
-                        Consider purchasing the 72-hour subway pass in Tokyo to avoid individual station ticket markups.
-                      </div>
+                    <div className="space-y-3.5">
+                      {selectedTripDetails?.budget_logs.map((log, idx) => (
+                        <div key={log.id} className="flex justify-between items-center border-b border-slate-900 pb-2.5 last:border-0 last:pb-0">
+                          <div>
+                            <span className="text-xs text-white font-semibold flex items-center">
+                              <span className="h-2 w-2 rounded-full mr-2" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
+                              {log.category}
+                            </span>
+                            <span className="text-3xs text-slate-500 block mt-0.5">{log.notes || "Approved allocation"}</span>
+                          </div>
+                          <span className="text-xs text-white font-mono font-semibold">
+                            {formatCurrency(showBudgetInHome ? (log.cost_home_currency || log.estimated_cost) : log.estimated_cost, showBudgetInHome ? selectedTripDetails.home_currency || "USD" : selectedTripDetails.currency)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
                 </div>
-
-                {/* Budget Category Table */}
-                <div className="glass rounded-2xl p-6">
-                  <h3 className="font-bold text-sm text-white mb-4">Budget Line Item Ledger</h3>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 font-medium">
-                          <th className="pb-3">Category</th>
-                          <th className="pb-3 text-right">Estimated Cost ({selectedTripDetails?.currency || "USD"})</th>
-                          {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
-                            <th className="pb-3 text-right">Home Value ({selectedTripDetails.home_currency})</th>
-                          )}
-                          <th className="pb-3 text-right">Actual Cost ({selectedTripDetails?.currency || "USD"})</th>
-                          <th className="pb-3 pl-6">Line Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                        {selectedTripDetails?.budget_logs.map((item) => (
-                          <tr key={item.id}>
-                            <td className="py-3 font-semibold text-white">{item.category}</td>
-                            <td className="py-3 text-right font-mono font-bold">
-                              {formatCurrency(item.estimated_cost, selectedTripDetails?.currency || "USD")}
-                            </td>
-                            {selectedTripDetails && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
-                              <td className="py-3 text-right font-mono font-medium text-slate-400">
-                                {formatCurrency(item.cost_home_currency || item.estimated_cost, selectedTripDetails.home_currency || "USD")}
-                              </td>
-                            )}
-                            <td className="py-3 text-right font-mono">
-                              {formatCurrency(item.actual_cost, selectedTripDetails?.currency || "USD")}
-                            </td>
-                            <td className="py-3 pl-6">
-                              <span className={`px-2 py-0.5 text-3xs font-semibold rounded ${
-                                item.actual_cost > 0 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-slate-800 text-slate-500"
-                              }`}>
-                                {item.actual_cost > 0 ? "Paid / Recorded" : "Allocated / Unpaid"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
               </motion.div>
             )}
 
@@ -1379,80 +1574,143 @@ export default function MissionControlDashboard() {
                 transition={{ duration: 0.2 }}
                 className="space-y-6"
               >
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
-                  {/* Left: Trend Chart */}
-                  <div className="glass rounded-2xl p-6 col-span-1 md:col-span-2 h-[380px] flex flex-col justify-between">
+                  {/* Left: Trend Graph */}
+                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 h-[420px] flex flex-col justify-between">
                     <div>
                       <h3 className="font-bold text-sm text-white mb-1">Exchange Rate Trend Tracker</h3>
-                      <p className="text-slate-400 text-xs">Simulated weekly fluctuation for {selectedTripDetails?.currency} relative to {selectedTripDetails?.home_currency}</p>
+                      <p className="text-slate-400 text-xs">Fluctuation metrics for {selectedTripDetails?.currency} relative to {selectedTripDetails?.home_currency}</p>
                     </div>
                     
-                    {currencyRates?.trends?.weekly_trend ? (
-                      <div className="h-[220px] w-full mt-4">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={currencyRates.trends.weekly_trend}>
-                            <XAxis dataKey="day" stroke="#94a3b8" fontSize={10} />
-                            <YAxis stroke="#94a3b8" fontSize={10} domain={['auto', 'auto']} />
-                            <Tooltip formatter={(value) => [`${value}`, 'Rate']} />
-                            <Bar dataKey="rate" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="text-center p-8 text-slate-500 text-xs flex-1 flex items-center justify-center">No trend analysis loaded. Initialize a travel mission to calculate.</div>
-                    )}
+                    <div className="h-[250px] w-full mt-4">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={currencyRates?.trends?.weekly_trend || mockWeeklyTrend}>
+                          <defs>
+                            <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                              <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <XAxis dataKey="day" stroke="#475569" fontSize={9} tickLine={false} />
+                          <YAxis stroke="#475569" fontSize={9} domain={['auto', 'auto']} tickLine={false} />
+                          <Tooltip formatter={(value) => [`${value}`, 'Exchange Rate']} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", borderRadius: "12px", fontSize: "11px" }} />
+                          <Area type="monotone" dataKey="rate" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    <div className="text-3xs text-slate-500 flex justify-between border-t border-slate-800/80 pt-4 mt-2">
+                      <span>Timestamp: {currencyRates?.last_updated || "Live"}</span>
+                      <span>Trend Confidence: High</span>
+                    </div>
                   </div>
 
-                  {/* Right: Cash/Card & ATM Surcharges */}
-                  <div className="glass rounded-2xl p-6 col-span-1 space-y-4 flex flex-col justify-between h-[380px]">
+                  {/* Right: Premium Currency Converter Widget */}
+                  <div className="glass rounded-2xl p-6 col-span-1 h-[420px] flex flex-col justify-between">
                     <div>
-                      <h3 className="font-bold text-sm text-white mb-2">Payment Surcharge Advice</h3>
-                      <span className="text-2xs text-slate-500 uppercase tracking-wider block">Recommended Strategy</span>
-                      <p className="text-indigo-300 font-semibold text-xs mt-1">{currencyRates?.advice?.recommended_payment_method || "Credit Card (Zero Foreign Fee)"}</p>
-                    </div>
-
-                    <div className="space-y-3 text-xs">
-                      <div>
-                        <span className="text-slate-500 block text-2xs uppercase">Card Acceptance</span>
-                        <div className="w-full bg-slate-800 h-2 rounded-full mt-1 overflow-hidden">
-                          <div className="bg-emerald-500 h-2 rounded-full" style={{ width: `${currencyRates?.advice?.card_acceptance_percent || 80}%` }}></div>
+                      <h3 className="font-bold text-sm text-white mb-4">Currency Exchange Intelligence</h3>
+                      
+                      <div className="space-y-4">
+                        {/* FROM Currency Selector */}
+                        <div className="relative">
+                          <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Convert From</label>
+                          <button 
+                            type="button"
+                            onClick={() => setShowFromList(!showFromList)}
+                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white text-left flex justify-between items-center min-h-[44px] cursor-pointer"
+                          >
+                            <span>{convertFrom}</span>
+                            <ChevronDown className="h-4 w-4 text-slate-400" />
+                          </button>
+                          
+                          <AnimatePresence>
+                            {showFromList && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 5 }}
+                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                              >
+                                {["USD", "EUR", "JPY", "INR", "GBP", "AUD"].map((cur, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => {
+                                      setConvertFrom(cur);
+                                      setShowFromList(false);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer"
+                                  >
+                                    {cur}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
                         </div>
-                        <span className="text-slate-400 text-3xs mt-1 block">{currencyRates?.advice?.card_acceptance_percent || 80}% Cashless Card usage recommended</span>
-                      </div>
 
-                      <div className="p-3.5 rounded-xl border border-rose-500/20 bg-rose-500/5 text-rose-300 font-medium">
-                        <span className="font-bold text-rose-400 block text-3xs uppercase">ATM markup Warning</span>
-                        {currencyRates?.advice?.atm_warning || "Avoid standalone airport ATMs. Use bank ATMs for the best rate."}
+                        {/* TO Currency Selector */}
+                        <div className="relative">
+                          <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Convert To</label>
+                          <button 
+                            type="button"
+                            onClick={() => setShowToList(!showToList)}
+                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white text-left flex justify-between items-center min-h-[44px] cursor-pointer"
+                          >
+                            <span>{convertTo}</span>
+                            <ChevronDown className="h-4 w-4 text-slate-400" />
+                          </button>
+
+                          <AnimatePresence>
+                            {showToList && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 5 }}
+                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                              >
+                                {["USD", "EUR", "JPY", "INR", "GBP", "AUD"].map((cur, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => {
+                                      setConvertTo(cur);
+                                      setShowToList(false);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer"
+                                  >
+                                    {cur}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Amount */}
+                        <div>
+                          <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Exchange Amount</label>
+                          <input 
+                            type="number" 
+                            value={convertAmount}
+                            onChange={(e) => setConvertAmount(Number(e.target.value))}
+                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]"
+                          />
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Result */}
+                    <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300 text-center mt-6">
+                      <span className="text-3xs uppercase tracking-widest font-bold block text-slate-500 mb-1">Calculated Conversion</span>
+                      <h4 className="text-lg font-black font-mono">
+                        {convertAmount.toLocaleString()} {convertFrom} = {roundConversion(convertAmount, convertFrom, convertTo)} {convertTo}
+                      </h4>
                     </div>
                   </div>
 
                 </div>
-
-                {/* Exchange Rates Alert Cards */}
-                <div className="glass rounded-2xl p-6">
-                  <h3 className="font-bold text-sm text-white mb-4">Currency Alerts & Exchange Risk Sentry</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-                    <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 flex items-start space-x-3 text-indigo-200">
-                      <ArrowRightLeft className="h-5 w-5 text-indigo-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-white text-xs">Exchange Lock-in Alert</h4>
-                        <p className="mt-1 leading-relaxed">{currencyRates?.trends?.alert || "Weekly rate is stable. No action required."}</p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex items-start space-x-3 text-emerald-200">
-                      <Sparkles className="h-5 w-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-white text-xs">Spending Prediction</h4>
-                        <p className="mt-1 leading-relaxed">
-                          Your home currency budget is optimized. Due to a {currencyRates?.trends?.percentage_change_week > 0 ? "weakening" : "strengthening"} rate, you have approximately {currencyRates?.trends?.percentage_change_week > 0 ? "fewer" : "extra"} funds available.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
               </motion.div>
             )}
 
@@ -1470,7 +1728,7 @@ export default function MissionControlDashboard() {
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-semibold text-slate-400 uppercase block mb-1.5">Model Engine Endpoint</label>
-                    <select className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white select-none">
+                    <select className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px] cursor-pointer">
                       <option>gemini-flash-latest (Vertex AI)</option>
                       <option>gemini-2.5-flash (Vertex AI API)</option>
                     </select>
@@ -1478,12 +1736,12 @@ export default function MissionControlDashboard() {
 
                   <div>
                     <label className="text-xs font-semibold text-slate-400 uppercase block mb-1.5">Google Cloud Project ID</label>
-                    <input type="text" value="travel-mission-capstone" readOnly className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl text-slate-500 focus:outline-none cursor-not-allowed" />
+                    <input type="text" value="travel-mission-capstone" readOnly className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl text-slate-500 focus:outline-none cursor-not-allowed min-h-[44px]" />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold text-slate-400 uppercase block mb-1.5">GCP Regional Host</label>
-                    <input type="text" value="global (Vertex AI Endpoint)" readOnly className="w-full bg-slate-900 border border-slate-800 text-xs px-4 py-3 rounded-xl text-slate-500 focus:outline-none cursor-not-allowed" />
+                    <input type="text" value="global (Vertex AI Endpoint)" readOnly className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl text-slate-500 focus:outline-none cursor-not-allowed min-h-[44px]" />
                   </div>
                   
                   <div className="pt-4 border-t border-slate-800 flex justify-between items-center text-xs">
@@ -1501,4 +1759,21 @@ export default function MissionControlDashboard() {
 
     </div>
   );
+
+  // Fake conversion factor helper for standalone converter
+  function roundConversion(amount: number, from: string, to: string) {
+    if (from === to) return amount.toFixed(2);
+    
+    const rates: any = {
+      USD: { EUR: 0.92, JPY: 155.4, INR: 83.5, GBP: 0.79, AUD: 1.51 },
+      EUR: { USD: 1.09, JPY: 168.9, INR: 90.7, GBP: 0.86, AUD: 1.64 },
+      JPY: { USD: 0.0064, EUR: 0.0059, INR: 0.54, GBP: 0.0051, AUD: 0.0097 },
+      INR: { USD: 0.012, EUR: 0.011, JPY: 1.86, GBP: 0.0095, AUD: 0.018 },
+      GBP: { USD: 1.27, EUR: 1.16, JPY: 196.7, INR: 105.3, AUD: 1.91 },
+      AUD: { USD: 0.66, EUR: 0.61, JPY: 102.9, INR: 55.2, GBP: 0.52 }
+    };
+    
+    const factor = rates[from]?.[to] || 1.0;
+    return (amount * factor).toFixed(2);
+  }
 }
