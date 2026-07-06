@@ -320,6 +320,11 @@ export default function MissionControlDashboard() {
   const [liveRatesMap, setLiveRatesMap] = useState<Record<string, number>>({});
   const [ratesLastUpdated, setRatesLastUpdated] = useState<string>("");
 
+  // Preferred Currency States for Budget ledger
+  const [preferredCurrency, setPreferredCurrency] = useState<string>("USD");
+  const [searchPreferred, setSearchPreferred] = useState<string>("");
+  const [showPreferredList, setShowPreferredList] = useState<boolean>(false);
+
   // File upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
@@ -403,6 +408,19 @@ export default function MissionControlDashboard() {
   useEffect(() => {
     fetchLiveRates(convertFrom);
   }, [convertFrom]);
+
+  // Sync preferred currency with loaded trip's home currency
+  useEffect(() => {
+    if (selectedTripDetails?.home_currency) {
+      setPreferredCurrency(selectedTripDetails.home_currency);
+      const c = COUNTRIES.find(curr => curr.currency === selectedTripDetails.home_currency);
+      if (c) {
+        setSearchPreferred(`${c.flag} ${c.name} (${c.currency})`);
+      } else {
+        setSearchPreferred(selectedTripDetails.home_currency);
+      }
+    }
+  }, [selectedTripDetails]);
 
   // Glowing Earth Landing Canvas
   useEffect(() => {
@@ -902,6 +920,14 @@ export default function MissionControlDashboard() {
         c.name.toLowerCase().includes(searchTo.toLowerCase()) ||
         c.currency.toLowerCase().includes(searchTo.toLowerCase()) ||
         c.currencyName.toLowerCase().includes(searchTo.toLowerCase())
+      )
+    : COUNTRIES;
+
+  const filteredPreferredCurrencies = searchPreferred 
+    ? COUNTRIES.filter(c => 
+        c.name.toLowerCase().includes(searchPreferred.toLowerCase()) ||
+        c.currency.toLowerCase().includes(searchPreferred.toLowerCase()) ||
+        c.currencyName.toLowerCase().includes(searchPreferred.toLowerCase())
       )
     : COUNTRIES;
 
@@ -1997,20 +2023,70 @@ export default function MissionControlDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Left: allocations chart */}
-                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 flex flex-col justify-between min-h-[380px]">
-                    <div className="flex justify-between items-start">
+                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 flex flex-col justify-between min-h-[380px] relative">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-slate-800/60 mb-4 gap-4">
                       <div>
                         <h3 className="font-bold text-sm text-white">Expense Allocation Ledger</h3>
                         <p className="text-slate-400 text-xs mt-0.5">Budget ledger compiled by Budget Assistant.</p>
                       </div>
                       
-                      {/* Currency Swap Toggle */}
-                      <button 
-                        onClick={() => setShowBudgetInHome(!showBudgetInHome)}
-                        className="px-3.5 py-1.5 text-3xs font-extrabold bg-indigo-600/10 text-indigo-300 border border-indigo-500/20 rounded-xl hover:bg-indigo-600/20 transition-all min-h-[44px] cursor-pointer"
-                      >
-                        Toggle to {showBudgetInHome ? selectedTripDetails?.currency : selectedTripDetails?.home_currency}
-                      </button>
+                      {/* Searchable Preferred Currency dropdown */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative">
+                          <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Preferred Currency</label>
+                          <div className="relative">
+                            <input 
+                              type="text" 
+                              placeholder="Search e.g. India" 
+                              value={searchPreferred}
+                              onChange={(e) => {
+                                setSearchPreferred(e.target.value);
+                                setShowPreferredList(true);
+                              }}
+                              onFocus={() => setShowPreferredList(true)}
+                              className="bg-slate-950 border border-slate-900 text-xs px-3.5 py-2 pr-8 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[40px] w-[180px]" 
+                            />
+                            <ChevronDown className="absolute right-2.5 top-3 h-3.5 w-3.5 text-slate-500 pointer-events-none" />
+                          </div>
+
+                          <AnimatePresence>
+                            {showPreferredList && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 5 }}
+                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                              >
+                                {filteredPreferredCurrencies.map((c, idx) => (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => {
+                                      setPreferredCurrency(c.currency);
+                                      setSearchPreferred(`${c.flag} ${c.name} (${c.currency})`);
+                                      setShowPreferredList(false);
+                                    }}
+                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[40px] cursor-pointer flex items-center space-x-2"
+                                  >
+                                    <span>{c.flag}</span>
+                                    <span>{c.name} ({c.currency})</span>
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        {/* Toggle Show in Preferred vs Destination Currency */}
+                        <div className="pt-4">
+                          <button 
+                            onClick={() => setShowBudgetInHome(!showBudgetInHome)}
+                            className="px-3.5 py-2 text-3xs font-extrabold bg-indigo-600/10 text-indigo-300 border border-indigo-500/20 rounded-xl hover:bg-indigo-600/20 transition-all min-h-[40px] cursor-pointer"
+                          >
+                            Show in {showBudgetInHome ? (selectedTripDetails?.currency || "Destination") : `Preferred (${preferredCurrency})`}
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     <div className="h-[200px] w-full mt-4 flex items-center justify-center">
@@ -2018,20 +2094,26 @@ export default function MissionControlDashboard() {
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={selectedTripDetails.budget_logs}
+                              data={selectedTripDetails.budget_logs.map(log => {
+                                const rate = liveRatesMap[preferredCurrency] || getStaticRate(selectedTripDetails.currency, preferredCurrency);
+                                return {
+                                  ...log,
+                                  displayCost: showBudgetInHome ? Number((log.estimated_cost * rate).toFixed(2)) : log.estimated_cost
+                                };
+                              })}
                               cx="50%"
                               cy="50%"
                               innerRadius={60}
                               outerRadius={80}
                               paddingAngle={4}
-                              dataKey={showBudgetInHome ? "cost_home_currency" : "estimated_cost"}
+                              dataKey="displayCost"
                               nameKey="category"
                             >
                               {selectedTripDetails.budget_logs.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip formatter={(value, name) => [`${formatCurrency(Number(value), showBudgetInHome ? selectedTripDetails.home_currency || "USD" : selectedTripDetails.currency)}`, name]} />
+                            <Tooltip formatter={(value) => [`${formatCurrency(Number(value), showBudgetInHome ? preferredCurrency : selectedTripDetails.currency)}`, 'Estimated']} />
                           </PieChart>
                         </ResponsiveContainer>
                       ) : (
@@ -2041,7 +2123,7 @@ export default function MissionControlDashboard() {
 
                     <div className="flex justify-between items-center text-3xs text-slate-500 border-t border-slate-800/80 pt-4 mt-4">
                       <span>Interactive charts render real-time changes</span>
-                      <span>Budget Health: 100% Optimized</span>
+                      <span>Budget View: {showBudgetInHome ? `Preferred (${preferredCurrency})` : `Destination (${selectedTripDetails?.currency})`}</span>
                     </div>
                   </div>
 
@@ -2050,20 +2132,24 @@ export default function MissionControlDashboard() {
                     <h3 className="font-bold text-sm text-white mb-4">Breakdown & Auditing</h3>
                     
                     <div className="space-y-3.5">
-                      {selectedTripDetails?.budget_logs.map((log, idx) => (
-                        <div key={log.id} className="flex justify-between items-center border-b border-slate-900 pb-2.5 last:border-0 last:pb-0">
-                          <div>
-                            <span className="text-xs text-white font-semibold flex items-center">
-                              <span className="h-2 w-2 rounded-full mr-2" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
-                              {log.category}
+                      {selectedTripDetails?.budget_logs.map((log, idx) => {
+                        const rate = liveRatesMap[preferredCurrency] || getStaticRate(selectedTripDetails.currency, preferredCurrency);
+                        const costToDisplay = showBudgetInHome ? (log.estimated_cost * rate) : log.estimated_cost;
+                        return (
+                          <div key={log.id} className="flex justify-between items-center border-b border-slate-900 pb-2.5 last:border-0 last:pb-0">
+                            <div>
+                              <span className="text-xs text-white font-semibold flex items-center">
+                                <span className="h-2 w-2 rounded-full mr-2" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
+                                {log.category}
+                              </span>
+                              <span className="text-3xs text-slate-500 block mt-0.5">{log.notes || "Approved allocation"}</span>
+                            </div>
+                            <span className="text-xs text-white font-mono font-semibold">
+                              {formatCurrency(costToDisplay, showBudgetInHome ? preferredCurrency : selectedTripDetails.currency)}
                             </span>
-                            <span className="text-3xs text-slate-500 block mt-0.5">{log.notes || "Approved allocation"}</span>
                           </div>
-                          <span className="text-xs text-white font-mono font-semibold">
-                            {formatCurrency(showBudgetInHome ? (log.cost_home_currency || log.estimated_cost) : log.estimated_cost, showBudgetInHome ? selectedTripDetails.home_currency || "USD" : selectedTripDetails.currency)}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
