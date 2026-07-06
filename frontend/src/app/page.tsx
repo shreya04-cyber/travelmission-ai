@@ -297,9 +297,9 @@ export default function MissionControlDashboard() {
   
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [budgetTotal, setBudgetTotal] = useState<number>(2000);
-  const [homeCurrency, setHomeCurrency] = useState<string>("USD");
-  const [destCurrency, setDestCurrency] = useState<string>("EUR");
+  const [budgetTotal, setBudgetTotal] = useState<number | "">("");
+  const [homeCurrency, setHomeCurrency] = useState<string>("");
+  const [destCurrency, setDestCurrency] = useState<string>("");
   const [creatingTrip, setCreatingTrip] = useState<boolean>(false);
   const [currencyRates, setCurrencyRates] = useState<any>(null);
   const [loadingRates, setLoadingRates] = useState<boolean>(false);
@@ -753,7 +753,7 @@ export default function MissionControlDashboard() {
   // Create trip submit
   const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!destination || !startDate || !endDate) return;
+    if (!destination || !startDate || !endDate || !budgetTotal) return;
 
     setCreatingTrip(true);
     try {
@@ -1784,8 +1784,9 @@ export default function MissionControlDashboard() {
                       <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Total Budget</label>
                       <input 
                         type="number" 
-                        value={budgetTotal} 
-                        onChange={(e) => setBudgetTotal(Number(e.target.value))} 
+                        placeholder="Enter your budget"
+                        value={budgetTotal === "" ? "" : budgetTotal} 
+                        onChange={(e) => setBudgetTotal(e.target.value === "" ? "" : Number(e.target.value))} 
                         className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                       />
                     </div>
