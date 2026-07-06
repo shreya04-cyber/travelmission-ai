@@ -76,37 +76,45 @@ interface Country {
   code: string;
   flag: string;
   currency: string;
+  symbol: string;
 }
 
 const COUNTRIES: Country[] = [
-  { name: "Tokyo, Japan", code: "JP", flag: "🇯🇵", currency: "JPY" },
-  { name: "Paris, France", code: "FR", flag: "🇫🇷", currency: "EUR" },
-  { name: "New York, USA", code: "US", flag: "🇺🇸", currency: "USD" },
-  { name: "London, UK", code: "GB", flag: "🇬🇧", currency: "GBP" },
-  { name: "Delhi, India", code: "IN", flag: "🇮🇳", currency: "INR" },
-  { name: "Berlin, Germany", code: "DE", flag: "🇩🇪", currency: "EUR" },
-  { name: "Rome, Italy", code: "IT", flag: "🇮🇹", currency: "EUR" },
-  { name: "Sydney, Australia", code: "AU", flag: "🇦🇺", currency: "AUD" },
-  { name: "Toronto, Canada", code: "CA", flag: "🇨🇦", currency: "CAD" },
-  { name: "Singapore", code: "SG", flag: "🇸🇬", currency: "SGD" },
-  { name: "Madrid, Spain", code: "ES", flag: "🇪🇸", currency: "EUR" },
-  { name: "Geneva, Switzerland", code: "CH", flag: "🇨🇭", currency: "CHF" },
-  { name: "Bangkok, Thailand", code: "TH", flag: "🇹🇭", currency: "THB" },
-  { name: "Seoul, South Korea", code: "KR", flag: "🇰🇷", currency: "KRW" },
-  { name: "Beijing, China", code: "CN", flag: "🇨🇳", currency: "CNY" },
-  { name: "Dubai, UAE", code: "AE", flag: "🇦🇪", currency: "AED" },
-  { name: "Amsterdam, Netherlands", code: "NL", flag: "🇳🇱", currency: "EUR" },
-  { name: "Cape Town, South Africa", code: "ZA", flag: "🇿🇦", currency: "ZAR" },
-  { name: "Rio de Janeiro, Brazil", code: "BR", flag: "🇧🇷", currency: "BRL" },
-  { name: "Mexico City, Mexico", code: "MX", flag: "🇲🇽", currency: "MXN" }
+  { name: "United States", code: "US", flag: "🇺🇸", currency: "USD", symbol: "$" },
+  { name: "Eurozone", code: "EU", flag: "🇪🇺", currency: "EUR", symbol: "€" },
+  { name: "Japan", code: "JP", flag: "🇯🇵", currency: "JPY", symbol: "¥" },
+  { name: "United Kingdom", code: "GB", flag: "🇬🇧", currency: "GBP", symbol: "£" },
+  { name: "India", code: "IN", flag: "🇮🇳", currency: "INR", symbol: "₹" },
+  { name: "Australia", code: "AU", flag: "🇦🇺", currency: "AUD", symbol: "A$" },
+  { name: "Canada", code: "CA", flag: "🇨🇦", currency: "CAD", symbol: "C$" },
+  { name: "Switzerland", code: "CH", flag: "🇨🇭", currency: "CHF", symbol: "Fr" },
+  { name: "China", code: "CN", flag: "🇨🇳", currency: "CNY", symbol: "¥" },
+  { name: "Sweden", code: "SE", flag: "🇸🇪", currency: "SEK", symbol: "kr" },
+  { name: "New Zealand", code: "NZ", flag: "🇳🇿", currency: "NZD", symbol: "NZ$" },
+  { name: "Mexico", code: "MX", flag: "🇲🇽", currency: "MXN", symbol: "$" },
+  { name: "Singapore", code: "SG", flag: "🇸🇬", currency: "SGD", symbol: "S$" },
+  { name: "Hong Kong", code: "HK", flag: "🇭🇰", currency: "HKD", symbol: "HK$" },
+  { name: "Norway", code: "NO", flag: "🇳🇴", currency: "NOK", symbol: "kr" },
+  { name: "South Korea", code: "KR", flag: "🇰🇷", currency: "KRW", symbol: "₩" },
+  { name: "Turkey", code: "TR", flag: "🇹🇷", currency: "TRY", symbol: "₺" },
+  { name: "Russia", code: "RU", flag: "🇷🇺", currency: "RUB", symbol: "₽" },
+  { name: "Brazil", code: "BR", flag: "🇧🇷", currency: "BRL", symbol: "R$" },
+  { name: "South Africa", code: "ZA", flag: "🇿🇦", currency: "ZAR", symbol: "R" },
+  { name: "Thailand", code: "TH", flag: "🇹🇭", currency: "THB", symbol: "฿" },
+  { name: "Malaysia", code: "MY", flag: "🇲🇾", currency: "MYR", symbol: "RM" },
+  { name: "Indonesia", code: "ID", flag: "🇮🇩", currency: "IDR", symbol: "Rp" },
+  { name: "Saudi Arabia", code: "SA", flag: "🇸🇦", currency: "SAR", symbol: "SR" },
+  { name: "United Arab Emirates", code: "AE", flag: "🇦🇪", currency: "AED", symbol: "AED" },
+  { name: "Poland", code: "PL", flag: "🇵🇱", currency: "PLN", symbol: "zł" },
+  { name: "Denmark", code: "DK", flag: "🇩🇰", currency: "DKK", symbol: "kr" }
 ];
 
 const COLORS = ["#6366f1", "#10b981", "#f43f5e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899"];
 
 export default function MissionControlDashboard() {
   const [showLanding, setShowLanding] = useState<boolean>(true);
-  const [showArchModal, setShowArchModal] = useState<boolean>(false);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
   
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -132,9 +140,12 @@ export default function MissionControlDashboard() {
   const [showBudgetInHome, setShowBudgetInHome] = useState<boolean>(false);
 
   // Currency Converter Custom State
-  const [convertAmount, setConvertAmount] = useState<number>(100);
+  const [convertAmountFrom, setConvertAmountFrom] = useState<number>(100);
+  const [convertAmountTo, setConvertAmountTo] = useState<number>(92);
   const [convertFrom, setConvertFrom] = useState<string>("USD");
   const [convertTo, setConvertTo] = useState<string>("EUR");
+  const [searchFrom, setSearchFrom] = useState<string>("");
+  const [searchTo, setSearchTo] = useState<string>("");
   const [showFromList, setShowFromList] = useState<boolean>(false);
   const [showToList, setShowToList] = useState<boolean>(false);
 
@@ -145,12 +156,14 @@ export default function MissionControlDashboard() {
   // Chat state
   const [chatMessage, setChatMessage] = useState<string>("");
   const [chatHistory, setChatHistory] = useState<{sender: string, text: string}[]>([
-    { sender: "Orchestrator", text: "Welcome to TravelMission AI. Select a trip or create a new mission to begin." }
+    { sender: "Lead Planner", text: "Welcome to TravelMission AI. Select a trip or create a new travel mission to begin." }
   ]);
 
+  // Refs
   const activityEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const howItWorksRef = useRef<HTMLDivElement>(null);
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -240,13 +253,12 @@ export default function MissionControlDashboard() {
         ctx.shadowColor = "#10b981";
         ctx.shadowBlur = 10;
         ctx.fill();
-        ctx.shadowBlur = 0; // reset
+        ctx.shadowBlur = 0; 
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
         ctx.font = "10px sans-serif";
         ctx.fillText(p.label, p.x + 8, p.y + 3);
 
-        // Arc connections
         const next = points[(idx + 1) % points.length];
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
@@ -267,6 +279,23 @@ export default function MissionControlDashboard() {
       cancelAnimationFrame(animationFrameId);
     };
   }, [showLanding]);
+
+  // Bidirectional conversion handler
+  const handleFromAmountChange = (amount: number) => {
+    setConvertAmountFrom(amount);
+    const converted = roundConversion(amount, convertFrom, convertTo);
+    setConvertAmountTo(Number(converted));
+  };
+
+  const handleToAmountChange = (amount: number) => {
+    setConvertAmountTo(amount);
+    const converted = roundConversion(amount, convertTo, convertFrom);
+    setConvertAmountFrom(Number(converted));
+  };
+
+  useEffect(() => {
+    handleFromAmountChange(convertAmountFrom);
+  }, [convertFrom, convertTo]);
 
   // Helper to format currency values safely
   const formatCurrency = (val: number, cur: string) => {
@@ -418,6 +447,18 @@ export default function MissionControlDashboard() {
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      // Simplify internal orchestrator message keywords for non-technical users
+      if (data.message) {
+        data.message = data.message
+          .replace(/orchestrator/gi, "Lead Planner")
+          .replace(/autonomous/gi, "automatic")
+          .replace(/optimization/gi, "budget savings")
+          .replace(/mission control/gi, "Dashboard")
+          .replace(/specialized ai agents/gi, "travel assistants");
+      }
+      if (data.agent) {
+        data.agent = data.agent.replace(/orchestrator/gi, "Lead Planner");
+      }
       setAgentLogs((prev) => [...prev, data]);
       if (data.message === "Trip details synchronized successfully.") {
         fetchTripDetails(tripId);
@@ -428,12 +469,12 @@ export default function MissionControlDashboard() {
       setWebsocketActive(false);
       if (agentLogs.length === 0) {
         const fallbacks: AgentLog[] = [
-          { type: "Thought", agent: "Orchestrator", message: "Planning mission initialized. Deploying sub-agents." },
-          { type: "Thought", agent: "Visa Agent", message: "Reviewing passport guidelines... US citizen does not require visa for stay < 90 days." },
-          { type: "ToolCall", agent: "Flight Agent", message: "Executing flight search tool for SFO to HND on 2026-10-15." },
-          { type: "Thought", agent: "Weather Agent", message: "Forecasting rain alert on Day 2 in Tokyo. Sending alert to Activity Planner." },
-          { type: "Thought", agent: "Activity Planner", message: "Rain alert received. Re-shuffling Day 2 morning tour to indoor Art Museum." },
-          { type: "Result", agent: "Orchestrator", message: "All 12 agents complete. Travel Mission Board fully populated." }
+          { type: "Thought", agent: "Lead Planner", message: "Planning session initialized. Deploying assistants." },
+          { type: "Thought", agent: "Visa Assistant", message: "Reviewing passport rules... US citizen does not require visa for stay under 90 days." },
+          { type: "ToolCall", agent: "Flight Assistant", message: "Searching for flights from SFO to HND on 2026-10-15." },
+          { type: "Thought", agent: "Weather Assistant", message: "Rain alert on Day 2 in Tokyo. Sending notice to Activity Planner." },
+          { type: "Thought", agent: "Activity Planner", message: "Rain alert received. Moving outdoor tour to indoor museum." },
+          { type: "Result", agent: "Lead Planner", message: "All travel plans compiled successfully." }
         ];
         setAgentLogs(fallbacks);
       }
@@ -565,20 +606,20 @@ export default function MissionControlDashboard() {
     
     // Simulate Orchestrator Response
     setTimeout(() => {
-      let reply = "I have noted your request. I will coordinate with the relevant agents to adjust your plan.";
+      let reply = "I have noted your request. I will coordinate with the relevant assistants to adjust your plan.";
       if (chatMessage.toLowerCase().includes("budget") || chatMessage.toLowerCase().includes("cheap")) {
-        reply = "Budget Agent: Recalculating... We can cut $200 by choosing an alternative flight date on Wednesday.";
+        reply = "Budget Assistant: We can save $200 by choosing an alternative flight date on Wednesday.";
       } else if (chatMessage.toLowerCase().includes("weather") || chatMessage.toLowerCase().includes("rain")) {
-        reply = "Weather Agent: Checked. Rain is forecast for Day 3. I suggest visiting the Art Museum that day.";
+        reply = "Weather Assistant: Rain is forecast for Day 3. I suggest visiting the Art Museum that day.";
       }
-      setChatHistory((prev) => [...prev, { sender: "Orchestrator", text: reply }]);
+      setChatHistory((prev) => [...prev, { sender: "Lead Planner", text: reply }]);
     }, 1000);
   };
 
-  // Scroll feed to bottom
-  useEffect(() => {
-    activityEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [agentLogs]);
+  // Scroll to how it works
+  const scrollToHowItWorks = () => {
+    howItWorksRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   // Autocomplete country match
   const filteredCountries = countrySearch 
@@ -603,13 +644,13 @@ export default function MissionControlDashboard() {
         <div className="absolute -bottom-[20%] -right-[10%] w-[50%] h-[50%] rounded-full bg-emerald-500/5 blur-3xl"></div>
       </div>
 
-      {/* FULL SCREEN Futuristic Landing Page */}
+      {/* FULL SCREEN Educational Landing Page */}
       <AnimatePresence>
         {showLanding && (
           <motion.div 
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute inset-0 bg-[#080c14] z-50 overflow-y-auto flex flex-col justify-between"
+            className="absolute inset-0 bg-[#080c14] z-50 overflow-y-auto flex flex-col justify-between scroll-smooth"
           >
             {/* Header */}
             <div className="max-w-7xl mx-auto w-full px-6 py-6 flex justify-between items-center relative z-10">
@@ -621,50 +662,49 @@ export default function MissionControlDashboard() {
               </div>
               <button 
                 onClick={() => setShowLanding(false)}
-                className="px-5 py-2.5 rounded-xl border border-indigo-500/30 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-300 font-semibold text-xs transition-all tracking-wider shadow-lg shadow-indigo-600/10 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl border border-indigo-500/30 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-300 font-semibold text-xs transition-all tracking-wider shadow-lg shadow-indigo-600/10 cursor-pointer min-h-[44px]"
               >
                 Access Dashboard
               </button>
             </div>
 
-            {/* Body */}
-            <div className="max-w-7xl mx-auto w-full px-6 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 py-12">
-              <div className="space-y-8 max-w-xl">
+            {/* SECTION 1: HERO */}
+            <div className="max-w-7xl mx-auto w-full px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10 py-12">
+              <div className="space-y-6 max-w-xl">
                 <span className="px-3 py-1 text-2xs font-extrabold bg-indigo-600/10 text-indigo-300 border border-indigo-500/20 rounded-full uppercase tracking-widest">
-                  Powered by Gemini 2.5 & Google ADK
+                  ✈️ TravelMission AI
                 </span>
                 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] mt-2">
-                  AI Travel <br />
-                  <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-500 bg-clip-text text-transparent">Mission Control</span>
+                  Your Personal AI <br />
+                  <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-500 bg-clip-text text-transparent">Travel Mission Control</span>
                 </h1>
 
                 <p className="text-base text-slate-400 leading-relaxed">
-                  One Mission. 12 Specialized AI Agents. Infinite Adventures. Monitor flights, budgets, weather, security sentry logs, and country document audits simultaneously.
+                  Planning a trip shouldn't require opening 10 different websites. TravelMission AI brings everything together in one place. Our AI agents work as your personal travel team to help you plan flights, hotels, visas, budgets, weather, currency conversion, packing, safety, and local recommendations—all from a single request.
                 </p>
 
                 <div className="flex flex-wrap gap-4 pt-4">
                   <button 
                     onClick={() => setShowLanding(false)}
-                    className="h-12 px-8 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center space-x-2 cursor-pointer"
+                    className="h-12 px-8 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center space-x-2 cursor-pointer min-h-[44px]"
                   >
-                    <span>Start Planning</span>
+                    <span>🚀 Start Planning</span>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                   
                   <button 
-                    onClick={() => setShowArchModal(true)}
-                    className="h-12 px-8 rounded-xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/80 text-slate-300 font-bold text-sm tracking-wide transition-all flex items-center space-x-2 cursor-pointer"
+                    onClick={scrollToHowItWorks}
+                    className="h-12 px-8 rounded-xl border border-slate-800 bg-slate-900/40 hover:bg-slate-800/80 text-slate-300 font-bold text-sm tracking-wide transition-all flex items-center space-x-2 cursor-pointer min-h-[44px]"
                   >
-                    <span>Explore Architecture</span>
-                    <Sparkles className="h-4 w-4 text-indigo-400" />
+                    <span>📖 Learn How It Works</span>
                   </button>
                 </div>
               </div>
 
               {/* Glowing Canvas Globe */}
               <div className="w-full h-[300px] lg:h-[500px] relative flex items-center justify-center">
-                <canvas ref={canvasRef} className="absolute z-0 w-full h-full max-w-[450px] max-h-[450px]" />
+                <canvas ref={canvasRef} className="absolute z-0 w-full h-full max-w-[400px] max-h-[400px]" />
                 
                 {/* Floating travel cards overlay */}
                 <div className="absolute top-10 left-5 glass rounded-xl p-3 shadow-2xl border-indigo-500/20 flex items-center space-x-3 animate-bounce" style={{ animationDuration: "5s" }}>
@@ -685,71 +725,206 @@ export default function MissionControlDashboard() {
               </div>
             </div>
 
+            {/* SECTION 2: WHY THIS APP? */}
+            <div className="max-w-7xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80">
+              <h2 className="text-2xl md:text-3xl font-black text-white text-center mb-12">Why TravelMission AI?</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                {/* Without App */}
+                <div className="glass rounded-2xl p-6 border-rose-500/20 bg-rose-500/5">
+                  <h3 className="font-extrabold text-sm text-rose-400 mb-4 flex items-center uppercase tracking-widest">
+                    <span className="mr-2">❌</span> Without TravelMission AI
+                  </h3>
+                  <ul className="space-y-3.5 text-xs text-slate-400">
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Open many websites to cross-reference logs</li>
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Search flights separately in manual tabs</li>
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Check passport and entry visa regulations on government pages</li>
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Calculate trip budget ledger in standard sheets</li>
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Convert foreign currency rates on active searches</li>
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Check weather forecast alerts manually</li>
+                    <li className="flex items-center"><span className="text-rose-500 mr-2 font-bold">✕</span> Plan day-by-day itineraries by hand</li>
+                  </ul>
+                </div>
+
+                {/* With App */}
+                <div className="glass rounded-2xl p-6 border-emerald-500/20 bg-emerald-500/5">
+                  <h3 className="font-extrabold text-sm text-emerald-400 mb-4 flex items-center uppercase tracking-widest">
+                    <span className="mr-2">✅</span> With TravelMission AI
+                  </h3>
+                  <ul className="space-y-3.5 text-xs text-slate-200 font-medium">
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> Access all details from one central platform</li>
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> AI travel assistants check flights in parallel</li>
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> Automatic passport validity check and visa alerts</li>
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> Budget is parsed, saved, and adjusted automatically</li>
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> Dual currency toggles automatically calculate home rates</li>
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> Weather warnings shift outdoor agenda blocks dynamically</li>
+                    <li className="flex items-center"><span className="text-emerald-400 mr-2 font-bold">✓</span> Structured itineraries are rendered in clean timeline lists</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: HOW IT WORKS */}
+            <div ref={howItWorksRef} className="max-w-7xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80">
+              <h2 className="text-2xl md:text-3xl font-black text-white text-center mb-12">How It Works</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6 text-center text-xs">
+                {[
+                  { step: "Step 1", title: "📍 Enter destination", desc: "Type in your destination city or select it from our helper list." },
+                  { step: "Step 2", title: "📅 Select dates", desc: "Input when you depart and return for custom agenda calculations." },
+                  { step: "Step 3", title: "💰 Set budget", desc: "Select your max expenditure budget for flight/hotel check caps." },
+                  { step: "Step 4", title: "🤖 Assistants Start Working", desc: "Our collaborative travel assistants cross-examine forecasts, rates, and hotels." },
+                  { step: "Step 5", title: "📊 Mission Dashboard", desc: "Explore your structured budget charts, advisory index, and checklists." }
+                ].map((s, idx) => (
+                  <div key={idx} className="glass rounded-2xl p-6 border-slate-800 flex flex-col justify-between min-h-[160px] relative">
+                    <div>
+                      <span className="text-3xs text-indigo-400 uppercase tracking-widest font-extrabold">{s.step}</span>
+                      <h4 className="font-extrabold text-white text-xs mt-2">{s.title}</h4>
+                      <p className="text-slate-400 text-2xs mt-2 leading-relaxed">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SECTION 4: MEET YOUR AI TEAM */}
+            <div className="max-w-7xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80">
+              <h2 className="text-2xl md:text-3xl font-black text-white text-center mb-12">Meet Your AI Travel Assistants</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { name: "Flight Agent", desc: "Locates the best routing options." },
+                  { name: "Hotel Agent", desc: "Suggests safety-vetted hotel properties." },
+                  { name: "Visa Agent", desc: "Advises entry rules and checks passports." },
+                  { name: "Weather Agent", desc: "Scans temperature forecasts and warnings." },
+                  { name: "Budget Agent", desc: "Structures expense allocations." },
+                  { name: "Currency Agent", desc: "Handles exchanges and live rates." },
+                  { name: "Safety Agent", desc: "Reviews local advisory ratings." },
+                  { name: "Language Agent", desc: "Translates menus and guides." },
+                  { name: "Packing Agent", desc: "Compiles weather-appropriate checklists." },
+                  { name: "Local Guide Agent", desc: "Curates dining spots and attractions." },
+                  { name: "Transportation Agent", desc: "Aligns airport transfer shuttles." },
+                  { name: "Activity Planner Agent", desc: "Builds day-by-day travel timelines." }
+                ].map((member, idx) => (
+                  <div key={idx} className="glass rounded-2xl p-5 border-slate-800 hover:border-indigo-500/20 transition-all text-center">
+                    <h4 className="font-extrabold text-white text-xs">{member.name}</h4>
+                    <p className="text-slate-400 text-2xs mt-2 leading-relaxed">{member.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SECTION 5: WHAT YOU GET */}
+            <div className="max-w-7xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80">
+              <h2 className="text-2xl md:text-3xl font-black text-white text-center mb-12">What You Get</h2>
+              
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center text-xs">
+                {[
+                  { name: "Flights", desc: "Best options mapped." },
+                  { name: "Hotels", desc: "Handpicked stays." },
+                  { name: "Visa Guidance", desc: "Hassle-free entry checks." },
+                  { name: "Currency Conversion", desc: "Exchange rate alerts." },
+                  { name: "Weather", desc: "Forecast and warnings." },
+                  { name: "Safety Alerts", desc: "Emergency information." },
+                  { name: "Packing Checklist", desc: "Custom weather packing." },
+                  { name: "Local Attractions", desc: "Restaurants & gems." },
+                  { name: "Budget Planner", desc: "Clean ledger charts." },
+                  { name: "Smart Itinerary", desc: "Day-by-day schedule." }
+                ].map((feat, idx) => (
+                  <div key={idx} className="glass rounded-2xl p-5 border-slate-800 flex flex-col justify-between min-h-[110px]">
+                    <span className="font-bold text-white text-xs block">{feat.name}</span>
+                    <span className="text-slate-400 text-3xs mt-1 block">{feat.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SECTION 6: WHY AI AGENTS? */}
+            <div className="max-w-4xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80 text-center">
+              <h2 className="text-2xl md:text-3xl font-black text-white mb-6">Why AI Travel Assistants?</h2>
+              <p className="text-sm text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                Instead of one chatbot trying to do everything, TravelMission AI uses a team of specialized AI agents. Each agent focuses on one task and shares its results with the others. This makes planning faster, smarter, and more organized.
+              </p>
+            </div>
+
+            {/* SECTION 7: HOW TO USE */}
+            <div className="max-w-7xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80">
+              <h2 className="text-2xl md:text-3xl font-black text-white text-center mb-12">Step-by-Step Onboarding</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-7 gap-4 text-center text-xs font-semibold">
+                {[
+                  { step: "1", title: "Click 'Start Planning'" },
+                  { step: "2", title: "Enter destination" },
+                  { step: "3", title: "Select travel dates" },
+                  { step: "4", title: "Set your budget" },
+                  { step: "5", title: "Upload tickets/docs" },
+                  { step: "6", title: "Wait for assistants" },
+                  { step: "7", title: "Explore dashboard!" }
+                ].map((step, idx) => (
+                  <div key={idx} className="glass rounded-xl p-4 border-slate-800 flex flex-col justify-between min-h-[100px]">
+                    <span className="h-6 w-6 rounded-full bg-indigo-600/35 border border-indigo-500/20 text-white flex items-center justify-center mx-auto text-2xs font-extrabold">{step.step}</span>
+                    <span className="text-2xs text-slate-200 mt-2 block">{step.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SECTION 8: FAQ */}
+            <div className="max-w-3xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80">
+              <h2 className="text-2xl md:text-3xl font-black text-white text-center mb-10">Frequently Asked Questions</h2>
+              
+              <div className="space-y-4 text-xs font-semibold">
+                {[
+                  { q: "What is TravelMission AI?", a: "TravelMission AI is an AI travel team planner that schedules itineraries, checks security ratings, validates entry requirements, and converts expenses instantly." },
+                  { q: "How does it work?", a: "A lead planner coordinates with 12 specialized assistants to gather details and aggregate them into a single screen view." },
+                  { q: "Why are AI agents better?", a: "Collaborative agents share context in parallel. If the weather agent spots rain, the planner shuffles your itineraries automatically." },
+                  { q: "Can I change my destination later?", a: "Yes, you can edit or launch a new travel mission anytime from the dashboard panel." },
+                  { q: "Does it work internationally?", a: "Absolutely. We support international travel destinations and automatically calculate foreign exchange conversions." },
+                  { q: "How does currency conversion work?", a: "The currency assistant grabs current market rates and translates budget ledger cards into your local currency." },
+                  { q: "Can I use it on mobile?", a: "Yes, the dashboard is fully responsive across mobile, tablet, and desktop screens." }
+                ].map((faq, idx) => (
+                  <div key={idx} className="border-b border-slate-800 pb-4">
+                    <button 
+                      onClick={() => setFaqOpen(faqOpen === idx ? null : idx)}
+                      className="w-full text-left font-bold text-white flex justify-between items-center py-2 cursor-pointer"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${faqOpen === idx ? "rotate-180" : ""}`} />
+                    </button>
+                    <AnimatePresence>
+                      {faqOpen === idx && (
+                        <motion.p 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="text-slate-400 text-2xs leading-relaxed mt-2 overflow-hidden font-normal"
+                        >
+                          {faq.a}
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SECTION 9: CALL TO ACTION */}
+            <div className="max-w-5xl mx-auto w-full px-6 py-20 relative z-10 border-t border-slate-800/80 text-center">
+              <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-4">Ready for your next adventure?</h2>
+              <p className="text-slate-400 text-sm mb-8">Let our AI travel team plan your journey.</p>
+              
+              <button 
+                onClick={() => setShowLanding(false)}
+                className="h-12 px-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95 transition-all cursor-pointer min-h-[44px]"
+              >
+                🚀 Start Your Mission
+              </button>
+            </div>
+
             {/* Footer */}
             <div className="max-w-7xl mx-auto w-full px-6 py-6 border-t border-slate-800/80 text-center text-xs text-slate-500 relative z-10">
               © 2026 TravelMission AI Corp. Built for Kaggle AI Agents Capstone.
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ARCHITECTURE MODAL */}
-      <AnimatePresence>
-        {showArchModal && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-6"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-[#0b0f19] border border-slate-800 rounded-2xl w-full max-w-4xl p-6 relative overflow-hidden"
-            >
-              <button 
-                onClick={() => setShowArchModal(false)}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="h-6 w-6" />
-              </button>
-
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center space-x-2">
-                <Globe className="h-5 w-5 text-indigo-400" />
-                <span>Multi-Agent System Architecture</span>
-              </h3>
-
-              <p className="text-xs text-slate-400 mb-6">
-                TravelMission AI is powered by a hierarchical model orchestration setup. Below is the operational data flow:
-              </p>
-
-              {/* Node Flow mockup */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center text-xs font-bold font-mono">
-                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300">
-                  <span className="block text-2xs text-slate-500 mb-1">INTERFACE</span>
-                  React Frontend
-                </div>
-                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300">
-                  <span className="block text-2xs text-slate-500 mb-1">ROUTING</span>
-                  FastAPI Backend
-                </div>
-                <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300">
-                  <span className="block text-2xs text-slate-500 mb-1">COORDINATION</span>
-                  Lead Orchestrator
-                </div>
-                <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-300">
-                  <span className="block text-2xs text-slate-500 mb-1">EXECUTION</span>
-                  12 Agent Fleet
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 rounded-xl bg-slate-900 border border-slate-800 text-2xs text-slate-300 space-y-2 leading-relaxed">
-                <p>💡 <strong>Lead Orchestrator</strong>: Synthesizes input requests, validates security bounds, and issues task tokens.</p>
-                <p>🛠️ <strong>MCP Sandboxing</strong>: Standardizes tool declarations for Browsers, Google Maps, and Local File systems using isolated environments.</p>
-                <p>🗄️ <strong>SQLite Ledger</strong>: Guarantees complete execution logging and persists generated itineraries, budgets, and document tokens.</p>
-              </div>
-            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -779,18 +954,18 @@ export default function MissionControlDashboard() {
             </div>
             <div>
               <h1 className="font-bold text-lg tracking-wider text-white">TravelMission</h1>
-              <p className="text-xs text-indigo-400 font-medium">Operations Center</p>
+              <p className="text-xs text-indigo-400 font-medium">Assistant Hub</p>
             </div>
           </div>
 
           <nav className="space-y-1.5">
             {[
-              { id: "dashboard", label: "Mission Board", icon: Briefcase },
-              { id: "trips", label: "All Missions", icon: MapPin },
-              { id: "agents", label: "Agent Hub", icon: Sparkles },
-              { id: "documents", label: "Documents", icon: FileText },
-              { id: "budget", label: "Budget Log", icon: DollarSign },
-              { id: "currency", label: "Currency Intel", icon: ArrowRightLeft },
+              { id: "dashboard", label: "Travel Dashboard", icon: Briefcase },
+              { id: "trips", label: "My Trips", icon: MapPin },
+              { id: "agents", label: "Travel Assistants", icon: Sparkles },
+              { id: "documents", label: "Visa & Tickets", icon: FileText },
+              { id: "budget", label: "Trip Budget", icon: DollarSign },
+              { id: "currency", label: "Money Exchange", icon: ArrowRightLeft },
               { id: "settings", label: "Settings", icon: Settings },
             ].map((item) => {
               const Icon = item.icon;
@@ -821,7 +996,7 @@ export default function MissionControlDashboard() {
             <User className="h-5 w-5 text-slate-300" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-white">Mission Director</h4>
+            <h4 className="text-sm font-semibold text-white">Traveler</h4>
             <p className="text-xs text-slate-500">ID: #4029-Alpha</p>
           </div>
         </div>
@@ -833,7 +1008,7 @@ export default function MissionControlDashboard() {
         {/* TOP NAV BAR */}
         <header className="hidden md:flex h-20 border-b border-slate-800/80 px-8 items-center justify-between bg-[#080c14]/50 backdrop-blur-md">
           <div className="flex items-center space-x-4">
-            <h2 className="text-xl font-bold tracking-tight text-white capitalize">{activeTab === "dashboard" ? "Mission Control" : activeTab} Panel</h2>
+            <h2 className="text-xl font-bold tracking-tight text-white capitalize">{activeTab === "dashboard" ? "Travel Control" : activeTab} Panel</h2>
             
             {/* Trip Selector Dropdown */}
             {trips.length > 0 && (
@@ -886,7 +1061,7 @@ export default function MissionControlDashboard() {
                         <span>AI Mission Control Center</span>
                         <span className="text-3xs bg-indigo-600/20 text-indigo-300 font-bold px-2 py-0.5 rounded border border-indigo-500/20 uppercase tracking-widest">Active Monitoring</span>
                       </h3>
-                      <p className="text-xs text-slate-400 mt-1">Autonomous multi-agent orchestration grid. Trigger simulations below to observe real-time collaboration.</p>
+                      <p className="text-xs text-slate-400 mt-1">Autonomous travel assistant coordination. Trigger simulations below to observe real-time updates.</p>
                     </div>
                     
                     <div className="flex items-center space-x-4 mt-4 lg:mt-0">
@@ -969,7 +1144,7 @@ export default function MissionControlDashboard() {
                     <div className="space-y-4">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
                         <Globe className="h-4 w-4 text-emerald-400" />
-                        <span>Active Agent Grid Status</span>
+                        <span>Active Assistant Status</span>
                       </h4>
                       <div className="grid grid-cols-3 gap-2 text-3xs font-bold text-center">
                         {[
@@ -997,7 +1172,7 @@ export default function MissionControlDashboard() {
                   
                   {/* Simulation triggers controller */}
                   <div className="mt-6 pt-5 border-t border-slate-800/80">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">Trigger Reactive Collaboration:</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-3">Trigger Collaboration Scenarios:</span>
                     <div className="flex flex-wrap gap-2.5">
                       {[
                         { id: "flight_price_drop", label: "✈️ Flight Price Drop", color: "hover:border-emerald-500/50 hover:bg-emerald-500/5" },
@@ -1060,7 +1235,7 @@ export default function MissionControlDashboard() {
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block text-2xs uppercase">Agents Active</span>
+                          <span className="text-slate-500 block text-2xs uppercase">Assistants Active</span>
                           <span className="font-semibold text-white text-sm">12 / 12</span>
                         </div>
                       </div>
@@ -1150,7 +1325,7 @@ export default function MissionControlDashboard() {
                     <div>
                       <h3 className="font-bold text-sm text-white mb-4 flex items-center">
                         <Sparkles className="h-4.5 w-4.5 mr-2 text-indigo-400" />
-                        <span>Lead Orchestrator Pilot</span>
+                        <span>Lead Travel Planner</span>
                       </h3>
                       
                       <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1 no-scrollbar text-xs">
@@ -1185,7 +1360,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: ALL MISSIONS */}
+            {/* TAB: MY TRIPS */}
             {activeTab === "trips" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -1205,14 +1380,14 @@ export default function MissionControlDashboard() {
                       <div className="relative">
                         <input 
                           type="text" 
-                          placeholder="Search e.g. Tokyo" 
+                          placeholder="Search e.g. Japan" 
                           value={countrySearch}
                           onChange={(e) => {
                             setCountrySearch(e.target.value);
                             setShowCountryDropdown(true);
                           }}
                           onFocus={() => setShowCountryDropdown(true)}
-                          className="w-full bg-slate-950 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
+                          className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                         />
                         <Search className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       </div>
@@ -1224,7 +1399,7 @@ export default function MissionControlDashboard() {
                             initial={{ opacity: 0, y: 5 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 5 }}
-                            className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[180px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                            className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[180px] overflow-y-auto z-30 shadow-2xl no-scrollbar animate-fade-in"
                           >
                             {filteredCountries.length > 0 ? (
                               filteredCountries.map((c, idx) => (
@@ -1284,14 +1459,14 @@ export default function MissionControlDashboard() {
                       className="w-full h-[44px] rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold tracking-wider transition-all flex items-center justify-center space-x-2 shadow-md cursor-pointer"
                     >
                       <Plane className="h-4 w-4" />
-                      <span>{creatingTrip ? "Launching..." : "Deploy Fleet"}</span>
+                      <span>{creatingTrip ? "Launching..." : "Deploy Assistants"}</span>
                     </button>
                   </form>
                 </div>
 
                 {/* Missions List */}
                 <div className="space-y-4">
-                  <h3 className="font-extrabold text-sm text-slate-400 uppercase tracking-wider">Active Missions Ledger</h3>
+                  <h3 className="font-extrabold text-sm text-slate-400 uppercase tracking-wider">Active Trips Ledger</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {trips.map((t) => (
@@ -1335,7 +1510,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: AGENTS */}
+            {/* TAB: TRAVEL ASSISTANTS */}
             {activeTab === "agents" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -1346,27 +1521,27 @@ export default function MissionControlDashboard() {
               >
                 <div className="flex justify-between items-center pb-4 border-b border-slate-800/80">
                   <div>
-                    <h3 className="font-extrabold text-lg text-white">Specialized AI Agent Grid</h3>
-                    <p className="text-slate-400 text-xs mt-1">12 dedicated agents operating concurrently via the Google Agent Development Kit (ADK).</p>
+                    <h3 className="font-extrabold text-lg text-white">Travel Assistant Hub</h3>
+                    <p className="text-slate-400 text-xs mt-1">12 dedicated assistants operating concurrently via the Google Agent Development Kit (ADK).</p>
                   </div>
                   <span className="px-3 py-1 text-2xs font-extrabold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded-full uppercase tracking-widest animate-pulse">
-                    Orchestrator Online
+                    Assistants Online
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { name: "Flight Agent", icon: Plane, desc: "Queries global airline directories. Optimizes routes and captures price drops.", tools: "Browser, Flight API", speed: "140ms" },
-                    { name: "Weather Agent", icon: Cloud, desc: "Monitors global meteorology forecasts. Triggers warnings for outdoor agenda shifts.", tools: "Weather API", speed: "210ms" },
-                    { name: "Visa Agent", icon: Shield, desc: "Validates visa policies and reviews uploaded passports for expiry dates.", tools: "Filesystem MCP", speed: "180ms" },
-                    { name: "Hotel Agent", icon: Briefcase, desc: "Finds safety-certified lodgings and updates booking arrival check-ins.", tools: "Hotels MCP", speed: "250ms" },
-                    { name: "Budget Agent", icon: DollarSign, desc: "Maintains budget ledgers and executes currency updates for expense metrics.", tools: "Budget Calculation", speed: "90ms" },
-                    { name: "Currency Agent", icon: ArrowRightLeft, desc: "Evaluates daily exchange trends and flags lock-in money exchange signals.", tools: "Currency Service", speed: "110ms" },
-                    { name: "Packing Agent", icon: CheckSquare, desc: "Compiles weather-appropriate packing recommendations automatically.", tools: "PackingList Skill", speed: "120ms" },
-                    { name: "Safety Agent", icon: ShieldAlert, desc: "Vets advisory ratings, crime metrics, and generates emergency checklists.", tools: "Safety API", speed: "300ms" },
-                    { name: "Language Agent", icon: BookOpen, desc: "Translates menu logs and updates regional basic communication guides.", tools: "Translation MCP", speed: "150ms" },
-                    { name: "Local Guide Agent", icon: Compass, desc: "Curates dining selections, etiquette alerts, and hidden cultural guides.", tools: "LocalEtiquette Skill", speed: "170ms" },
-                    { name: "Transportation Agent", icon: Activity, desc: "Optimizes airport transfers and aligns shuttle slots with flight delays.", tools: "LocalTransport Skill", speed: "220ms" },
+                    { name: "Flight Assistant", icon: Plane, desc: "Queries global airline directories. Optimizes routes and captures price drops.", tools: "Browser, Flight API", speed: "140ms" },
+                    { name: "Weather Assistant", icon: Cloud, desc: "Monitors global meteorology forecasts. Triggers warnings for outdoor agenda shifts.", tools: "Weather API", speed: "210ms" },
+                    { name: "Visa Assistant", icon: Shield, desc: "Validates visa policies and reviews uploaded passports for expiry dates.", tools: "Filesystem MCP", speed: "180ms" },
+                    { name: "Hotel Assistant", icon: Briefcase, desc: "Finds safety-certified lodgings and updates booking arrival check-ins.", tools: "Hotels MCP", speed: "250ms" },
+                    { name: "Budget Assistant", icon: DollarSign, desc: "Maintains budget ledgers and executes currency updates for expense metrics.", tools: "Budget Calculation", speed: "90ms" },
+                    { name: "Currency Assistant", icon: ArrowRightLeft, desc: "Evaluates daily exchange trends and flags lock-in money exchange signals.", tools: "Currency Service", speed: "110ms" },
+                    { name: "Packing Assistant", icon: CheckSquare, desc: "Compiles weather-appropriate packing recommendations automatically.", tools: "PackingList Skill", speed: "120ms" },
+                    { name: "Safety Assistant", icon: ShieldAlert, desc: "Vets advisory ratings, crime metrics, and generates emergency checklists.", tools: "Safety API", speed: "300ms" },
+                    { name: "Language Assistant", icon: BookOpen, desc: "Translates menu logs and updates regional basic communication guides.", tools: "Translation MCP", speed: "150ms" },
+                    { name: "Local Guide Assistant", icon: Compass, desc: "Curates dining selections, etiquette alerts, and hidden cultural guides.", tools: "LocalEtiquette Skill", speed: "170ms" },
+                    { name: "Transportation Assistant", icon: Activity, desc: "Optimizes airport transfers and aligns shuttle slots with flight delays.", tools: "LocalTransport Skill", speed: "220ms" },
                     { name: "Activity Planner", icon: Calendar, desc: "Compiles 5-day itineraries and shuffles time blocks dynamically.", tools: "Itinerary Engine", speed: "190ms" }
                   ].map((agent, idx) => {
                     const Icon = agent.icon;
@@ -1398,7 +1573,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: DOCUMENTS */}
+            {/* TAB: VISA & TICKETS */}
             {activeTab === "documents" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -1413,7 +1588,7 @@ export default function MissionControlDashboard() {
                   <div className="glass rounded-2xl p-6 col-span-1 flex flex-col justify-between min-h-[300px]">
                     <div>
                       <h3 className="font-bold text-sm text-white mb-2">Upload Visa & Travel Documents</h3>
-                      <p className="text-slate-400 text-xs">AI Visa Agent automatically extracts validity, passport numbers, and country checklists.</p>
+                      <p className="text-slate-400 text-xs">AI Visa Assistant automatically extracts validity, passport numbers, and country checklists.</p>
                     </div>
 
                     <form onSubmit={handleFileUpload} className="space-y-4 mt-6">
@@ -1471,7 +1646,7 @@ export default function MissionControlDashboard() {
 
                     <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-2xs text-slate-400 flex items-center space-x-2 mt-4">
                       <Lock className="h-4 w-4 text-emerald-400" />
-                      <span>Vault secured with local sandbox filesystem MCP constraints.</span>
+                      <span>Vault secured with local sandbox filesystem constraints.</span>
                     </div>
                   </div>
 
@@ -1479,7 +1654,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: BUDGET LOG */}
+            {/* TAB: TRIP BUDGET */}
             {activeTab === "budget" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -1495,7 +1670,7 @@ export default function MissionControlDashboard() {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="font-bold text-sm text-white">Expense Allocation Ledger</h3>
-                        <p className="text-slate-400 text-xs mt-0.5">Budget ledger compiled by Budget Agent.</p>
+                        <p className="text-slate-400 text-xs mt-0.5">Budget ledger compiled by Budget Assistant.</p>
                       </div>
                       
                       {/* Currency Swap Toggle */}
@@ -1565,7 +1740,7 @@ export default function MissionControlDashboard() {
               </motion.div>
             )}
 
-            {/* TAB: CURRENCY INTEL */}
+            {/* TAB: MONEY EXCHANGE (CURRENCY INTEL) */}
             {activeTab === "currency" && (
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
@@ -1577,7 +1752,7 @@ export default function MissionControlDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Left: Trend Graph */}
-                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 h-[420px] flex flex-col justify-between">
+                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 h-[440px] flex flex-col justify-between">
                     <div>
                       <h3 className="font-bold text-sm text-white mb-1">Exchange Rate Trend Tracker</h3>
                       <p className="text-slate-400 text-xs">Fluctuation metrics for {selectedTripDetails?.currency} relative to {selectedTripDetails?.home_currency}</p>
@@ -1606,23 +1781,29 @@ export default function MissionControlDashboard() {
                     </div>
                   </div>
 
-                  {/* Right: Premium Currency Converter Widget */}
-                  <div className="glass rounded-2xl p-6 col-span-1 h-[420px] flex flex-col justify-between">
+                  {/* Right: Redesigned Bi-directional Currency Converter Widget */}
+                  <div className="glass rounded-2xl p-6 col-span-1 h-[440px] flex flex-col justify-between relative">
                     <div>
                       <h3 className="font-bold text-sm text-white mb-4">Currency Exchange Intelligence</h3>
                       
                       <div className="space-y-4">
-                        {/* FROM Currency Selector */}
+                        {/* FROM Selector */}
                         <div className="relative">
                           <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Convert From</label>
-                          <button 
-                            type="button"
-                            onClick={() => setShowFromList(!showFromList)}
-                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white text-left flex justify-between items-center min-h-[44px] cursor-pointer"
-                          >
-                            <span>{convertFrom}</span>
-                            <ChevronDown className="h-4 w-4 text-slate-400" />
-                          </button>
+                          <div className="relative">
+                            <input 
+                              type="text" 
+                              placeholder="Search e.g. India"
+                              value={searchFrom || convertFrom}
+                              onChange={(e) => {
+                                setSearchFrom(e.target.value);
+                                setShowFromList(true);
+                              }}
+                              onFocus={() => setShowFromList(true)}
+                              className="w-full bg-slate-950 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white min-h-[44px]"
+                            />
+                            <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+                          </div>
                           
                           <AnimatePresence>
                             {showFromList && (
@@ -1632,17 +1813,19 @@ export default function MissionControlDashboard() {
                                 exit={{ opacity: 0, y: 5 }}
                                 className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
                               >
-                                {["USD", "EUR", "JPY", "INR", "GBP", "AUD"].map((cur, idx) => (
+                                {COUNTRIES.filter(c => c.name.toLowerCase().includes(searchFrom.toLowerCase()) || c.currency.toLowerCase().includes(searchFrom.toLowerCase())).map((c, idx) => (
                                   <button
                                     key={idx}
                                     type="button"
                                     onClick={() => {
-                                      setConvertFrom(cur);
+                                      setConvertFrom(c.currency);
+                                      setSearchFrom(`${c.flag} ${c.name} (${c.currency})`);
                                       setShowFromList(false);
                                     }}
-                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer"
+                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer flex items-center space-x-2"
                                   >
-                                    {cur}
+                                    <span>{c.flag}</span>
+                                    <span>{c.name} ({c.currency} {c.symbol})</span>
                                   </button>
                                 ))}
                               </motion.div>
@@ -1650,17 +1833,33 @@ export default function MissionControlDashboard() {
                           </AnimatePresence>
                         </div>
 
-                        {/* TO Currency Selector */}
+                        {/* Amount From Input */}
+                        <div>
+                          <input 
+                            type="number" 
+                            value={convertAmountFrom}
+                            onChange={(e) => handleFromAmountChange(Number(e.target.value))}
+                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px] font-mono"
+                          />
+                        </div>
+
+                        {/* TO Selector */}
                         <div className="relative">
                           <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Convert To</label>
-                          <button 
-                            type="button"
-                            onClick={() => setShowToList(!showToList)}
-                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white text-left flex justify-between items-center min-h-[44px] cursor-pointer"
-                          >
-                            <span>{convertTo}</span>
-                            <ChevronDown className="h-4 w-4 text-slate-400" />
-                          </button>
+                          <div className="relative">
+                            <input 
+                              type="text" 
+                              placeholder="Search e.g. Europe"
+                              value={searchTo || convertTo}
+                              onChange={(e) => {
+                                setSearchTo(e.target.value);
+                                setShowToList(true);
+                              }}
+                              onFocus={() => setShowToList(true)}
+                              className="w-full bg-slate-950 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white min-h-[44px]"
+                            />
+                            <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
+                          </div>
 
                           <AnimatePresence>
                             {showToList && (
@@ -1670,17 +1869,19 @@ export default function MissionControlDashboard() {
                                 exit={{ opacity: 0, y: 5 }}
                                 className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
                               >
-                                {["USD", "EUR", "JPY", "INR", "GBP", "AUD"].map((cur, idx) => (
+                                {COUNTRIES.filter(c => c.name.toLowerCase().includes(searchTo.toLowerCase()) || c.currency.toLowerCase().includes(searchTo.toLowerCase())).map((c, idx) => (
                                   <button
                                     key={idx}
                                     type="button"
                                     onClick={() => {
-                                      setConvertTo(cur);
+                                      setConvertTo(c.currency);
+                                      setSearchTo(`${c.flag} ${c.name} (${c.currency})`);
                                       setShowToList(false);
                                     }}
-                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer"
+                                    className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer flex items-center space-x-2"
                                   >
-                                    {cur}
+                                    <span>{c.flag}</span>
+                                    <span>{c.name} ({c.currency} {c.symbol})</span>
                                   </button>
                                 ))}
                               </motion.div>
@@ -1688,25 +1889,16 @@ export default function MissionControlDashboard() {
                           </AnimatePresence>
                         </div>
 
-                        {/* Amount */}
+                        {/* Amount To Input (Editable!) */}
                         <div>
-                          <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Exchange Amount</label>
                           <input 
                             type="number" 
-                            value={convertAmount}
-                            onChange={(e) => setConvertAmount(Number(e.target.value))}
-                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]"
+                            value={convertAmountTo}
+                            onChange={(e) => handleToAmountChange(Number(e.target.value))}
+                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px] font-mono"
                           />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Result */}
-                    <div className="p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 text-indigo-300 text-center mt-6">
-                      <span className="text-3xs uppercase tracking-widest font-bold block text-slate-500 mb-1">Calculated Conversion</span>
-                      <h4 className="text-lg font-black font-mono">
-                        {convertAmount.toLocaleString()} {convertFrom} = {roundConversion(convertAmount, convertFrom, convertTo)} {convertTo}
-                      </h4>
                     </div>
                   </div>
 
@@ -1773,7 +1965,10 @@ export default function MissionControlDashboard() {
       AUD: { USD: 0.66, EUR: 0.61, JPY: 102.9, INR: 55.2, GBP: 0.52 }
     };
     
-    const factor = rates[from]?.[to] || 1.0;
-    return (amount * factor).toFixed(2);
+    // Find rates or approximate JPY base
+    const fromRate = rates[from]?.[to] || (from === "JPY" ? 0.0064 : 1.0);
+    const toRate = rates[to]?.[from] || (to === "JPY" ? 155.4 : 1.0);
+    
+    return (amount * fromRate).toFixed(2);
   }
 }
