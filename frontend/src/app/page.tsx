@@ -76,37 +76,200 @@ interface Country {
   code: string;
   flag: string;
   currency: string;
+  currencyName: string;
   symbol: string;
 }
 
 const COUNTRIES: Country[] = [
-  { name: "United States", code: "US", flag: "🇺🇸", currency: "USD", symbol: "$" },
-  { name: "Eurozone", code: "EU", flag: "🇪🇺", currency: "EUR", symbol: "€" },
-  { name: "Japan", code: "JP", flag: "🇯🇵", currency: "JPY", symbol: "¥" },
-  { name: "United Kingdom", code: "GB", flag: "🇬🇧", currency: "GBP", symbol: "£" },
-  { name: "India", code: "IN", flag: "🇮🇳", currency: "INR", symbol: "₹" },
-  { name: "Australia", code: "AU", flag: "🇦🇺", currency: "AUD", symbol: "A$" },
-  { name: "Canada", code: "CA", flag: "🇨🇦", currency: "CAD", symbol: "C$" },
-  { name: "Switzerland", code: "CH", flag: "🇨🇭", currency: "CHF", symbol: "Fr" },
-  { name: "China", code: "CN", flag: "🇨🇳", currency: "CNY", symbol: "¥" },
-  { name: "Sweden", code: "SE", flag: "🇸🇪", currency: "SEK", symbol: "kr" },
-  { name: "New Zealand", code: "NZ", flag: "🇳🇿", currency: "NZD", symbol: "NZ$" },
-  { name: "Mexico", code: "MX", flag: "🇲🇽", currency: "MXN", symbol: "$" },
-  { name: "Singapore", code: "SG", flag: "🇸🇬", currency: "SGD", symbol: "S$" },
-  { name: "Hong Kong", code: "HK", flag: "🇭🇰", currency: "HKD", symbol: "HK$" },
-  { name: "Norway", code: "NO", flag: "🇳🇴", currency: "NOK", symbol: "kr" },
-  { name: "South Korea", code: "KR", flag: "🇰🇷", currency: "KRW", symbol: "₩" },
-  { name: "Turkey", code: "TR", flag: "🇹🇷", currency: "TRY", symbol: "₺" },
-  { name: "Russia", code: "RU", flag: "🇷🇺", currency: "RUB", symbol: "₽" },
-  { name: "Brazil", code: "BR", flag: "🇧🇷", currency: "BRL", symbol: "R$" },
-  { name: "South Africa", code: "ZA", flag: "🇿🇦", currency: "ZAR", symbol: "R" },
-  { name: "Thailand", code: "TH", flag: "🇹🇭", currency: "THB", symbol: "฿" },
-  { name: "Malaysia", code: "MY", flag: "🇲🇾", currency: "MYR", symbol: "RM" },
-  { name: "Indonesia", code: "ID", flag: "🇮🇩", currency: "IDR", symbol: "Rp" },
-  { name: "Saudi Arabia", code: "SA", flag: "🇸🇦", currency: "SAR", symbol: "SR" },
-  { name: "United Arab Emirates", code: "AE", flag: "🇦🇪", currency: "AED", symbol: "AED" },
-  { name: "Poland", code: "PL", flag: "🇵🇱", currency: "PLN", symbol: "zł" },
-  { name: "Denmark", code: "DK", flag: "🇩🇰", currency: "DKK", symbol: "kr" }
+  { name: "India", code: "IN", flag: "🇮🇳", currency: "INR", currencyName: "Indian Rupee", symbol: "₹" },
+  { name: "United States", code: "US", flag: "🇺🇸", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "United Kingdom", code: "GB", flag: "🇬🇧", currency: "GBP", currencyName: "British Pound", symbol: "£" },
+  { name: "Eurozone", code: "EU", flag: "🇪🇺", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Japan", code: "JP", flag: "🇯🇵", currency: "JPY", currencyName: "Japanese Yen", symbol: "¥" },
+  { name: "Canada", code: "CA", flag: "🇨🇦", currency: "CAD", currencyName: "Canadian Dollar", symbol: "C$" },
+  { name: "Australia", code: "AU", flag: "🇦🇺", currency: "AUD", currencyName: "Australian Dollar", symbol: "A$" },
+  { name: "Switzerland", code: "CH", flag: "🇨🇭", currency: "CHF", currencyName: "Swiss Franc", symbol: "Fr" },
+  { name: "China", code: "CN", flag: "🇨🇳", currency: "CNY", currencyName: "Chinese Yuan", symbol: "¥" },
+  { name: "South Korea", code: "KR", flag: "🇰🇷", currency: "KRW", currencyName: "South Korean Won", symbol: "₩" },
+  { name: "Singapore", code: "SG", flag: "🇸🇬", currency: "SGD", currencyName: "Singapore Dollar", symbol: "S$" },
+  { name: "United Arab Emirates", code: "AE", flag: "🇦🇪", currency: "AED", currencyName: "UAE Dirham", symbol: "د.إ" },
+  { name: "Qatar", code: "QA", flag: "🇶🇦", currency: "QAR", currencyName: "Qatari Riyal", symbol: "ر.ق" },
+  { name: "Saudi Arabia", code: "SA", flag: "🇸🇦", currency: "SAR", currencyName: "Saudi Riyal", symbol: "SR" },
+  { name: "Thailand", code: "TH", flag: "🇹🇭", currency: "THB", currencyName: "Thai Baht", symbol: "฿" },
+  { name: "Malaysia", code: "MY", flag: "🇲🇾", currency: "MYR", currencyName: "Malaysian Ringgit", symbol: "RM" },
+  { name: "New Zealand", code: "NZ", flag: "🇳🇿", currency: "NZD", currencyName: "New Zealand Dollar", symbol: "NZ$" },
+  { name: "Afghanistan", code: "AF", flag: "🇦🇫", currency: "AFN", currencyName: "Afghan Afghani", symbol: "؋" },
+  { name: "Albania", code: "AL", flag: "🇦🇱", currency: "ALL", currencyName: "Albanian Lek", symbol: "L" },
+  { name: "Algeria", code: "DZ", flag: "🇩🇿", currency: "DZD", currencyName: "Algerian Dinar", symbol: "د.ج" },
+  { name: "Angola", code: "AO", flag: "🇦🇴", currency: "AOA", currencyName: "Angolan Kwanza", symbol: "Kz" },
+  { name: "Argentina", code: "AR", flag: "🇦🇷", currency: "ARS", currencyName: "Argentine Peso", symbol: "$" },
+  { name: "Armenia", code: "AM", flag: "🇦🇲", currency: "AMD", currencyName: "Armenian Dram", symbol: "֏" },
+  { name: "Azerbaijan", code: "AZ", flag: "🇦🇿", currency: "AZN", currencyName: "Azerbaijani Manat", symbol: "₼" },
+  { name: "Bahamas", code: "BS", flag: "🇧🇸", currency: "BSD", currencyName: "Bahamian Dollar", symbol: "$" },
+  { name: "Bahrain", code: "BH", flag: "🇧🇭", currency: "BHD", currencyName: "Bahraini Dinar", symbol: ".د.ب" },
+  { name: "Bangladesh", code: "BD", flag: "🇧🇩", currency: "BDT", currencyName: "Bangladeshi Taka", symbol: "৳" },
+  { name: "Barbados", code: "BB", flag: "🇧🇧", currency: "BBD", currencyName: "Barbadian Dollar", symbol: "$" },
+  { name: "Belarus", code: "BY", flag: "🇧🇾", currency: "BYN", currencyName: "Belarusian Ruble", symbol: "Br" },
+  { name: "Belize", code: "BZ", flag: "🇧🇿", currency: "BZD", currencyName: "Belize Dollar", symbol: "$" },
+  { name: "Benin", code: "BJ", flag: "🇧🇯", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Bermuda", code: "BM", flag: "🇧🇲", currency: "BMD", currencyName: "Bermudian Dollar", symbol: "$" },
+  { name: "Bhutan", code: "BT", flag: "🇧🇹", currency: "BTN", currencyName: "Bhutanese Ngultrum", symbol: "Nu." },
+  { name: "Bolivia", code: "BO", flag: "🇧🇴", currency: "BOB", currencyName: "Bolivian Boliviano", symbol: "Bs." },
+  { name: "Bosnia and Herzegovina", code: "BA", flag: "🇧🇦", currency: "BAM", currencyName: "Convertible Mark", symbol: "KM" },
+  { name: "Botswana", code: "BW", flag: "🇧🇼", currency: "BWP", currencyName: "Botswana Pula", symbol: "P" },
+  { name: "Brazil", code: "BR", flag: "🇧🇷", currency: "BRL", currencyName: "Brazilian Real", symbol: "R$" },
+  { name: "Brunei", code: "BN", flag: "🇧🇳", currency: "BND", currencyName: "Brunei Dollar", symbol: "$" },
+  { name: "Bulgaria", code: "BG", flag: "🇧🇬", currency: "BGN", currencyName: "Bulgarian Lev", symbol: "лв" },
+  { name: "Burkina Faso", code: "BF", flag: "🇧🇫", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Burundi", code: "BI", flag: "🇧🇮", currency: "BIF", currencyName: "Burundian Franc", symbol: "Fr" },
+  { name: "Cambodia", code: "KH", flag: "🇰🇭", currency: "KHR", currencyName: "Cambodian Riel", symbol: "៛" },
+  { name: "Cameroon", code: "CM", flag: "🇨🇲", currency: "XAF", currencyName: "Central African CFA Franc", symbol: "Fr" },
+  { name: "Cape Verde", code: "CV", flag: "🇨🇻", currency: "CVE", currencyName: "Cape Verdean Escudo", symbol: "Esc" },
+  { name: "Central African Republic", code: "CF", flag: "🇨🇫", currency: "XAF", currencyName: "Central African CFA Franc", symbol: "Fr" },
+  { name: "Chad", code: "TD", flag: "🇹🇩", currency: "XAF", currencyName: "Central African CFA Franc", symbol: "Fr" },
+  { name: "Chile", code: "CL", flag: "🇨🇱", currency: "CLP", currencyName: "Chilean Peso", symbol: "$" },
+  { name: "Colombia", code: "CO", flag: "🇨🇴", currency: "COP", currencyName: "Colombian Peso", symbol: "$" },
+  { name: "Comoros", code: "KM", flag: "🇰🇲", currency: "KMF", currencyName: "Comorian Franc", symbol: "Fr" },
+  { name: "Congo", code: "CD", flag: "🇨🇬", currency: "CDF", currencyName: "Congolese Franc", symbol: "Fr" },
+  { name: "Costa Rica", code: "CR", flag: "🇨🇷", currency: "CRC", currencyName: "Costa Rican Colón", symbol: "₡" },
+  { name: "Cuba", code: "CU", flag: "🇨🇺", currency: "CUP", currencyName: "Cuban Peso", symbol: "$" },
+  { name: "Czech Republic", code: "CZ", flag: "🇨🇿", currency: "CZK", currencyName: "Czech Koruna", symbol: "Kč" },
+  { name: "Denmark", code: "DK", flag: "🇩🇰", currency: "DKK", currencyName: "Danish Krone", symbol: "kr" },
+  { name: "Djibouti", code: "DJ", flag: "🇩🇯", currency: "DJF", currencyName: "Djiboutian Franc", symbol: "Fr" },
+  { name: "Dominican Republic", code: "DO", flag: "🇩🇴", currency: "DOP", currencyName: "Dominican Peso", symbol: "$" },
+  { name: "Ecuador", code: "EC", flag: "🇪🇨", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "Egypt", code: "EG", flag: "🇪🇬", currency: "EGP", currencyName: "Egyptian Pound", symbol: "E£" },
+  { name: "El Salvador", code: "SV", flag: "🇸🇻", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "Equatorial Guinea", code: "GQ", flag: "🇬🇶", currency: "XAF", currencyName: "Central African CFA Franc", symbol: "Fr" },
+  { name: "Eritrea", code: "ER", flag: "🇪🇷", currency: "ERN", currencyName: "Eritrean Nakfa", symbol: "Nfk" },
+  { name: "Estonia", code: "EE", flag: "🇪🇪", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Eswatini", code: "SZ", flag: "🇸🇿", currency: "SZL", currencyName: "Swazi Lilangeni", symbol: "L" },
+  { name: "Ethiopia", code: "ET", flag: "🇪🇹", currency: "ETB", currencyName: "Ethiopian Birr", symbol: "Br" },
+  { name: "Fiji", code: "FJ", flag: "🇫🇯", currency: "FJD", currencyName: "Fijian Dollar", symbol: "$" },
+  { name: "Finland", code: "FI", flag: "🇫🇮", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "France", code: "FR", flag: "🇫🇷", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Gabon", code: "GA", flag: "🇬🇦", currency: "XAF", currencyName: "Central African CFA Franc", symbol: "Fr" },
+  { name: "Gambia", code: "GM", flag: "🇬🇲", currency: "GMD", currencyName: "Gambian Dalasi", symbol: "D" },
+  { name: "Georgia", code: "GE", flag: "🇬🇪", currency: "GEL", currencyName: "Georgian Lari", symbol: "₾" },
+  { name: "Germany", code: "DE", flag: "🇩🇪", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Ghana", code: "GH", flag: "🇬🇭", currency: "GHS", currencyName: "Ghanaian Cedi", symbol: "₵" },
+  { name: "Greece", code: "GR", flag: "🇬🇷", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Guatemala", code: "GT", flag: "🇬🇹", currency: "GTQ", currencyName: "Guatemalan Quetzal", symbol: "Q" },
+  { name: "Guinea", code: "GN", flag: "🇬🇳", currency: "GNF", currencyName: "Guinean Franc", symbol: "Fr" },
+  { name: "Guinea-Bissau", code: "GW", flag: "🇬🇼", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Guyana", code: "GY", flag: "🇬🇾", currency: "GYD", currencyName: "Guyanese Dollar", symbol: "$" },
+  { name: "Haiti", code: "HT", flag: "🇭🇹", currency: "HTG", currencyName: "Haitian Gourde", symbol: "G" },
+  { name: "Honduras", code: "HN", flag: "🇭🇳", currency: "HNL", currencyName: "Honduran Lempira", symbol: "L" },
+  { name: "Hong Kong", code: "HK", flag: "🇭🇰", currency: "HKD", currencyName: "Hong Kong Dollar", symbol: "HK$" },
+  { name: "Hungary", code: "HU", flag: "🇭🇺", currency: "HUF", currencyName: "Hungarian Forint", symbol: "Ft" },
+  { name: "Iceland", code: "IS", flag: "🇮🇸", currency: "ISK", currencyName: "Icelandic Króna", symbol: "kr" },
+  { name: "Indonesia", code: "ID", flag: "🇮🇩", currency: "IDR", currencyName: "Indonesian Rupiah", symbol: "Rp" },
+  { name: "Iran", code: "IR", flag: "🇮🇷", currency: "IRR", currencyName: "Iranian Rial", symbol: "﷼" },
+  { name: "Iraq", code: "IQ", flag: "🇮🇶", currency: "IQD", currencyName: "Iraqi Dinar", symbol: "ع.د" },
+  { name: "Ireland", code: "IE", flag: "🇮🇪", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Israel", code: "IL", flag: "🇮🇱", currency: "ILS", currencyName: "Israeli New Shekel", symbol: "₪" },
+  { name: "Italy", code: "IT", flag: "🇮🇹", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Jamaica", code: "JM", flag: "🇯🇲", currency: "JMD", currencyName: "Jamaican Dollar", symbol: "$" },
+  { name: "Jordan", code: "JO", flag: "🇯🇴", currency: "JOD", currencyName: "Jordanian Dinar", symbol: "د.ا" },
+  { name: "Kazakhstan", code: "KZ", flag: "🇰🇿", currency: "KZT", currencyName: "Kazakhstani Tenge", symbol: "₸" },
+  { name: "Kenya", code: "KE", flag: "🇰🇪", currency: "KES", currencyName: "Kenyan Shilling", symbol: "Sh" },
+  { name: "Kuwait", code: "KW", flag: "🇰🇼", currency: "KWD", currencyName: "Kuwaiti Dinar", symbol: "د.ك" },
+  { name: "Kyrgyzstan", code: "KG", flag: "🇰🇬", currency: "KGS", currencyName: "Kyrgyzstani Som", symbol: "с" },
+  { name: "Laos", code: "LA", flag: "🇱🇦", currency: "LAK", currencyName: "Lao Kip", symbol: "₭" },
+  { name: "Latvia", code: "LV", flag: "🇱🇻", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Lebanon", code: "LB", flag: "🇱🇧", currency: "LBP", currencyName: "Lebanese Pound", symbol: "ل.ل" },
+  { name: "Lesotho", code: "LS", flag: "🇱🇸", currency: "LSL", currencyName: "Lesotho Loti", symbol: "L" },
+  { name: "Liberia", code: "LR", flag: "🇱🇷", currency: "LRD", currencyName: "Liberian Dollar", symbol: "$" },
+  { name: "Libya", code: "LY", flag: "🇱🇾", currency: "LYD", currencyName: "Libyan Dinar", symbol: "د.ل" },
+  { name: "Liechtenstein", code: "LI", flag: "🇱🇮", currency: "CHF", currencyName: "Swiss Franc", symbol: "Fr" },
+  { name: "Lithuania", code: "LT", flag: "🇱🇹", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Luxembourg", code: "LU", flag: "🇱🇺", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Macao", code: "MO", flag: "🇲🇴", currency: "MOP", currencyName: "Macanese Pataca", symbol: "P" },
+  { name: "Madagascar", code: "MG", flag: "🇲🇬", currency: "MGA", currencyName: "Malagasy Ariary", symbol: "Ar" },
+  { name: "Malawi", code: "MW", flag: "🇲🇼", currency: "MWK", currencyName: "Malawian Kwacha", symbol: "MK" },
+  { name: "Maldives", code: "MV", flag: "🇲🇻", currency: "MVR", currencyName: "Maldivian Rufiyaa", symbol: "Rf" },
+  { name: "Mali", code: "ML", flag: "🇲🇱", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Malta", code: "MT", flag: "🇲🇹", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Marshall Islands", code: "MH", flag: "🇲🇭", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "Mauritania", code: "MR", flag: "🇲🇷", currency: "MRU", currencyName: "Mauritanian Ouguiya", symbol: "UM" },
+  { name: "Mauritius", code: "MU", flag: "🇲🇺", currency: "MUR", currencyName: "Mauritian Rupee", symbol: "₨" },
+  { name: "Mexico", code: "MX", flag: "🇲🇽", currency: "MXN", currencyName: "Mexican Peso", symbol: "$" },
+  { name: "Micronesia", code: "FM", flag: "🇫🇲", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "Moldova", code: "MD", flag: "🇲🇩", currency: "MDL", currencyName: "Moldovan Leu", symbol: "L" },
+  { name: "Monaco", code: "MC", flag: "🇲🇨", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Mongolia", code: "MN", flag: "🇲🇳", currency: "MNT", currencyName: "Mongolian Tögrög", symbol: "₮" },
+  { name: "Montenegro", code: "ME", flag: "🇲🇪", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Morocco", code: "MA", flag: "🇲🇦", currency: "MAD", currencyName: "Moroccan Dirham", symbol: "د.م." },
+  { name: "Mozambique", code: "MZ", flag: "🇲🇿", currency: "MZN", currencyName: "Mozambican Metical", symbol: "MT" },
+  { name: "Myanmar", code: "MM", flag: "🇲🇲", currency: "MMK", currencyName: "Myanmar Kyat", symbol: "K" },
+  { name: "Namibia", code: "NA", flag: "🇳🇦", currency: "NAD", currencyName: "Namibian Dollar", symbol: "$" },
+  { name: "Nauru", code: "NR", flag: "🇳🇷", currency: "AUD", currencyName: "Australian Dollar", symbol: "$" },
+  { name: "Nepal", code: "NP", flag: "🇳🇵", currency: "NPR", currencyName: "Nepalese Rupee", symbol: "₨" },
+  { name: "Netherlands", code: "NL", flag: "🇳🇱", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Nicaragua", code: "NI", flag: "🇳🇮", currency: "NIO", currencyName: "Nicaraguan Córdoba", symbol: "C$" },
+  { name: "Niger", code: "NE", flag: "🇳🇪", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Nigeria", code: "NG", flag: "🇳🇬", currency: "NGN", currencyName: "Nigerian Naira", symbol: "₦" },
+  { name: "North Korea", code: "KP", flag: "🇰🇵", currency: "KPW", currencyName: "North Korean Won", symbol: "₩" },
+  { name: "North Macedonia", code: "MK", flag: "🇲🇰", currency: "MKD", currencyName: "Macedonian Denar", symbol: "ден" },
+  { name: "Norway", code: "NO", flag: "🇳🇴", currency: "NOK", currencyName: "Norwegian Krone", symbol: "kr" },
+  { name: "Oman", code: "OM", flag: "🇴🇲", currency: "OMR", currencyName: "Omani Rial", symbol: "ر.ع." },
+  { name: "Pakistan", code: "PK", flag: "🇵🇰", currency: "PKR", currencyName: "Pakistani Rupee", symbol: "₨" },
+  { name: "Palau", code: "PW", flag: "🇵🇼", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "Palestine", code: "PS", flag: "🇵🇸", currency: "ILS", currencyName: "Israeli New Shekel", symbol: "₪" },
+  { name: "Panama", code: "PA", flag: "🇵🇦", currency: "PAB", currencyName: "Panamanian Balboa", symbol: "B/." },
+  { name: "Papua New Guinea", code: "PG", flag: "🇵🇬", currency: "PGK", currencyName: "Papua New Guinean Kina", symbol: "K" },
+  { name: "Paraguay", code: "PY", flag: "🇵🇾", currency: "PYG", currencyName: "Paraguayan Guaraní", symbol: "₲" },
+  { name: "Peru", code: "PE", flag: "🇵🇪", currency: "PEN", currencyName: "Peruvian Sol", symbol: "S/." },
+  { name: "Philippines", code: "PH", flag: "🇵🇭", currency: "PHP", currencyName: "Philippine Peso", symbol: "₱" },
+  { name: "Poland", code: "PL", flag: "🇵🇱", currency: "PLN", currencyName: "Polish Złoty", symbol: "zł" },
+  { name: "Portugal", code: "PT", flag: "🇵🇹", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Romania", code: "RO", flag: "🇷🇴", currency: "RON", currencyName: "Romanian Leu", symbol: "lei" },
+  { name: "Russia", code: "RU", flag: "🇷🇺", currency: "RUB", currencyName: "Russian Ruble", symbol: "₽" },
+  { name: "Rwanda", code: "RW", flag: "🇷🇼", currency: "RWF", currencyName: "Rwandan Franc", symbol: "Fr" },
+  { name: "Saint Kitts and Nevis", code: "KN", flag: "🇰🇳", currency: "XCD", currencyName: "East Caribbean Dollar", symbol: "$" },
+  { name: "Saint Lucia", code: "LC", flag: "🇱🇨", currency: "XCD", currencyName: "East Caribbean Dollar", symbol: "$" },
+  { name: "Saint Vincent and the Grenadines", code: "VC", flag: "🇻🇨", currency: "XCD", currencyName: "East Caribbean Dollar", symbol: "$" },
+  { name: "Samoa", code: "WS", flag: "🇼🇸", currency: "WST", currencyName: "Samoan Tālā", symbol: "T" },
+  { name: "San Marino", code: "SM", flag: "🇸🇲", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Sao Tome and Principe", code: "ST", flag: "🇸🇹", currency: "STN", currencyName: "São Tomé and Príncipe Dobra", symbol: "Db" },
+  { name: "Senegal", code: "SN", flag: "🇸🇳", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Serbia", code: "RS", flag: "🇷🇸", currency: "RSD", currencyName: "Serbian Dinar", symbol: "د.ب." },
+  { name: "Seychelles", code: "SC", flag: "🇸🇨", currency: "SCR", currencyName: "Seychellois Rupee", symbol: "₨" },
+  { name: "Sierra Leone", code: "SL", flag: "🇸🇱", currency: "SLE", currencyName: "Sierra Leonean Leone", symbol: "Le" },
+  { name: "Slovakia", code: "SK", flag: "🇸🇰", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Slovenia", code: "SI", flag: "🇸🇮", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Solomon Islands", code: "SB", flag: "🇸🇧", currency: "SBD", currencyName: "Solomon Islands Dollar", symbol: "$" },
+  { name: "Somalia", code: "SO", flag: "🇸🇴", currency: "SOS", currencyName: "Somali Shilling", symbol: "Sh" },
+  { name: "South Africa", code: "ZA", flag: "🇿🇦", currency: "ZAR", currencyName: "South African Rand", symbol: "R" },
+  { name: "South Sudan", code: "SS", flag: "🇸🇸", currency: "SSP", currencyName: "South Sudanese Pound", symbol: "£" },
+  { name: "Spain", code: "ES", flag: "🇪🇸", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Sri Lanka", code: "LK", flag: "🇱🇰", currency: "LKR", currencyName: "Sri Lankan Rupee", symbol: "₨" },
+  { name: "Sudan", code: "SD", flag: "🇸🇩", currency: "SDG", currencyName: "Sudanese Pound", symbol: "ج.س." },
+  { name: "Suriname", code: "SR", flag: "🇸🇷", currency: "SRD", currencyName: "Surinamese Dollar", symbol: "$" },
+  { name: "Sweden", code: "SE", flag: "🇸🇪", currency: "SEK", currencyName: "Swedish Krona", symbol: "kr" },
+  { name: "Syria", code: "SY", flag: "🇸🇾", currency: "SYP", currencyName: "Syrian Pound", symbol: "£" },
+  { name: "Taiwan", code: "TW", flag: "🇹🇼", currency: "TWD", currencyName: "New Taiwan Dollar", symbol: "NT$" },
+  { name: "Tajikistan", code: "TJ", flag: "🇹🇯", currency: "TJS", currencyName: "Tajikistani Somoni", symbol: "ЅМ" },
+  { name: "Tanzania", code: "TZ", flag: "🇹🇿", currency: "TZS", currencyName: "Tanzanian Shilling", symbol: "Sh" },
+  { name: "Timor-Leste", code: "TL", flag: "🇹🇱", currency: "USD", currencyName: "United States Dollar", symbol: "$" },
+  { name: "Togo", code: "TG", flag: "🇹🇬", currency: "XOF", currencyName: "West African CFA Franc", symbol: "Fr" },
+  { name: "Tonga", code: "TO", flag: "🇹🇴", currency: "TOP", currencyName: "Tongan Paʻanga", symbol: "T$" },
+  { name: "Trinidad and Tobago", code: "TT", flag: "🇹🇹", currency: "TTD", currencyName: "Trinidad and Tobago Dollar", symbol: "$" },
+  { name: "Tunisia", code: "TN", flag: "🇹🇳", currency: "TND", currencyName: "Tunisian Dinar", symbol: "د.ت" },
+  { name: "Turkey", code: "TR", flag: "🇹🇷", currency: "TRY", currencyName: "Turkish Lira", symbol: "₺" },
+  { name: "Turkmenistan", code: "TM", flag: "🇹🇲", currency: "TMT", currencyName: "Turkmenistan Manat", symbol: "m" },
+  { name: "Tuvalu", code: "TV", flag: "🇹🇻", currency: "AUD", currencyName: "Tuvaluan Dollar", symbol: "$" },
+  { name: "Uganda", code: "UG", flag: "🇺🇬", currency: "UGX", currencyName: "Ugandan Shilling", symbol: "Sh" },
+  { name: "Ukraine", code: "UA", flag: "🇺🇦", currency: "UAH", currencyName: "Ukrainian Hryvnia", symbol: "₴" },
+  { name: "Uruguay", code: "UY", flag: "🇺🇾", currency: "UYU", currencyName: "Uruguayan Peso", symbol: "$U" },
+  { name: "Uzbekistan", code: "UZ", flag: "🇺🇿", currency: "UZS", currencyName: "Uzbekistani So'm", symbol: "сўм" },
+  { name: "Vanuatu", code: "VU", flag: "🇻🇺", currency: "VUV", currencyName: "Vanuatu Vatu", symbol: "Vt" },
+  { name: "Vatican City", code: "VA", flag: "🇻🇦", currency: "EUR", currencyName: "Euro", symbol: "€" },
+  { name: "Venezuela", code: "VE", flag: "🇻🇪", currency: "VES", currencyName: "Venezuelan Bolívar Soberano", symbol: "Bs.S" },
+  { name: "Vietnam", code: "VN", flag: "🇻🇳", currency: "VND", currencyName: "Vietnamese Đồng", symbol: "₫" },
+  { name: "Yemen", code: "YE", flag: "🇾🇪", currency: "YER", currencyName: "Yemeni Rial", symbol: "﷼" },
+  { name: "Zambia", code: "ZM", flag: "🇿🇲", currency: "ZMW", currencyName: "Zambian Kwacha", symbol: "ZK" },
+  { name: "Zimbabwe", code: "ZW", flag: "🇿🇼", currency: "ZWL", currencyName: "Zimbabwean Dollar", symbol: "$" }
 ];
 
 const COLORS = ["#6366f1", "#10b981", "#f43f5e", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899"];
@@ -129,6 +292,9 @@ export default function MissionControlDashboard() {
   const [showCountryDropdown, setShowCountryDropdown] = useState<boolean>(false);
   const [countrySearch, setCountrySearch] = useState<string>("");
   
+  const [homeCountrySearch, setHomeCountrySearch] = useState<string>("");
+  const [showHomeCountryDropdown, setShowHomeCountryDropdown] = useState<boolean>(false);
+  
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [budgetTotal, setBudgetTotal] = useState<number>(2000);
@@ -148,6 +314,11 @@ export default function MissionControlDashboard() {
   const [searchTo, setSearchTo] = useState<string>("");
   const [showFromList, setShowFromList] = useState<boolean>(false);
   const [showToList, setShowToList] = useState<boolean>(false);
+
+  // Global Currency Converter Additional States
+  const [recentlyUsed, setRecentlyUsed] = useState<Array<{from: string, to: string}>>([]);
+  const [liveRatesMap, setLiveRatesMap] = useState<Record<string, number>>({});
+  const [ratesLastUpdated, setRatesLastUpdated] = useState<string>("");
 
   // File upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -170,6 +341,68 @@ export default function MissionControlDashboard() {
     setIsMounted(true);
     fetchTrips();
   }, []);
+
+  // Load recently used on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("recently_used_currencies");
+      if (stored) {
+        setRecentlyUsed(JSON.parse(stored));
+      } else {
+        const defaults = [
+          { from: "USD", to: "INR" },
+          { from: "EUR", to: "JPY" },
+          { from: "GBP", to: "AED" }
+        ];
+        setRecentlyUsed(defaults);
+        localStorage.setItem("recently_used_currencies", JSON.stringify(defaults));
+      }
+    }
+  }, []);
+
+  const addToRecentlyUsed = (from: string, to: string) => {
+    if (typeof window !== "undefined") {
+      const newPair = { from, to };
+      const filtered = recentlyUsed.filter(p => !(p.from === from && p.to === to));
+      const updated = [newPair, ...filtered].slice(0, 5);
+      setRecentlyUsed(updated);
+      localStorage.setItem("recently_used_currencies", JSON.stringify(updated));
+    }
+  };
+
+  const fetchLiveRates = async (base: string) => {
+    try {
+      const res = await fetch(`https://open.er-api.com/v6/latest/${base}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.rates) {
+          setLiveRatesMap(data.rates);
+          if (data.time_last_update_unix) {
+            const date = new Date(data.time_last_update_unix * 1000);
+            setRatesLastUpdated(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          } else {
+            setRatesLastUpdated(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Live rates fetch error, using fallback: ", err);
+    }
+    
+    // Fallback if API fails
+    const fallbackMap: Record<string, number> = {};
+    COUNTRIES.forEach(c => {
+      fallbackMap[c.currency] = getStaticRate(base, c.currency);
+    });
+    setLiveRatesMap(fallbackMap);
+    setRatesLastUpdated("Fallback Live");
+  };
+
+  // Re-fetch whenever convertFrom changes
+  useEffect(() => {
+    fetchLiveRates(convertFrom);
+  }, [convertFrom]);
 
   // Glowing Earth Landing Canvas
   useEffect(() => {
@@ -283,19 +516,37 @@ export default function MissionControlDashboard() {
   // Bidirectional conversion handler
   const handleFromAmountChange = (amount: number) => {
     setConvertAmountFrom(amount);
-    const converted = roundConversion(amount, convertFrom, convertTo);
-    setConvertAmountTo(Number(converted));
+    if (liveRatesMap && liveRatesMap[convertTo]) {
+      setConvertAmountTo(Number((amount * liveRatesMap[convertTo]).toFixed(2)));
+    } else {
+      const converted = roundConversion(amount, convertFrom, convertTo);
+      setConvertAmountTo(Number(converted));
+    }
   };
 
   const handleToAmountChange = (amount: number) => {
     setConvertAmountTo(amount);
-    const converted = roundConversion(amount, convertTo, convertFrom);
-    setConvertAmountFrom(Number(converted));
+    if (liveRatesMap && liveRatesMap[convertTo]) {
+      setConvertAmountFrom(Number((amount / liveRatesMap[convertTo]).toFixed(2)));
+    } else {
+      const converted = roundConversion(amount, convertTo, convertFrom);
+      setConvertAmountFrom(Number(converted));
+    }
+  };
+
+  const handleSwapCurrencies = () => {
+    const tempCode = convertFrom;
+    const tempSearch = searchFrom;
+    setConvertFrom(convertTo);
+    setSearchFrom(searchTo);
+    setConvertTo(tempCode);
+    setSearchTo(tempSearch);
+    addToRecentlyUsed(convertTo, convertFrom);
   };
 
   useEffect(() => {
     handleFromAmountChange(convertAmountFrom);
-  }, [convertFrom, convertTo]);
+  }, [convertFrom, convertTo, liveRatesMap]);
 
   // Helper to format currency values safely
   const formatCurrency = (val: number, cur: string) => {
@@ -623,7 +874,35 @@ export default function MissionControlDashboard() {
 
   // Autocomplete country match
   const filteredCountries = countrySearch 
-    ? COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase()))
+    ? COUNTRIES.filter(c => 
+        c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+        c.currency.toLowerCase().includes(countrySearch.toLowerCase()) ||
+        c.currencyName.toLowerCase().includes(countrySearch.toLowerCase())
+      )
+    : COUNTRIES;
+
+  const filteredHomeCountries = homeCountrySearch 
+    ? COUNTRIES.filter(c => 
+        c.name.toLowerCase().includes(homeCountrySearch.toLowerCase()) ||
+        c.currency.toLowerCase().includes(homeCountrySearch.toLowerCase()) ||
+        c.currencyName.toLowerCase().includes(homeCountrySearch.toLowerCase())
+      )
+    : COUNTRIES;
+
+  const filteredFromCurrencies = searchFrom 
+    ? COUNTRIES.filter(c => 
+        c.name.toLowerCase().includes(searchFrom.toLowerCase()) ||
+        c.currency.toLowerCase().includes(searchFrom.toLowerCase()) ||
+        c.currencyName.toLowerCase().includes(searchFrom.toLowerCase())
+      )
+    : COUNTRIES;
+
+  const filteredToCurrencies = searchTo 
+    ? COUNTRIES.filter(c => 
+        c.name.toLowerCase().includes(searchTo.toLowerCase()) ||
+        c.currency.toLowerCase().includes(searchTo.toLowerCase()) ||
+        c.currencyName.toLowerCase().includes(searchTo.toLowerCase())
+      )
     : COUNTRIES;
 
   const mockWeeklyTrend = [
@@ -1217,17 +1496,17 @@ export default function MissionControlDashboard() {
                     <div className="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center text-xs">
                       <div className="flex items-center space-x-4">
                         <div>
-                          <span className="text-slate-500 block text-2xs uppercase">Est. Cost</span>
-                          <span className="font-semibold text-white text-sm">
+                          <span className="text-slate-500 block text-2xs uppercase">Estimated Cost</span>
+                          <span className="font-semibold text-white text-sm block">
                             {selectedTripDetails ? (
                               <>
-                                {formatCurrency(selectedTripDetails.budget_total, selectedTripDetails.currency)}
-                                {selectedTripDetails.home_currency !== selectedTripDetails.currency && (
-                                  <span className="text-slate-400 text-xs font-normal ml-2">
-                                    ({formatCurrency(
-                                      selectedTripDetails.budget_logs?.reduce((acc, curr) => acc + (curr.cost_home_currency || curr.estimated_cost), 0) || selectedTripDetails.budget_total,
-                                      selectedTripDetails.home_currency || "USD"
-                                    )})
+                                <span>{formatCurrency(selectedTripDetails.budget_total, selectedTripDetails.currency)}</span>
+                                {selectedTripDetails.home_currency && selectedTripDetails.home_currency !== selectedTripDetails.currency && (
+                                  <span className="text-slate-400 text-xs font-normal block mt-0.5">
+                                    ≈ {formatCurrency(
+                                      selectedTripDetails.budget_logs?.reduce((acc, curr) => acc + (curr.cost_home_currency || curr.estimated_cost), 0) || (selectedTripDetails.budget_total * (liveRatesMap[selectedTripDetails.home_currency] || getStaticRate(selectedTripDetails.currency, selectedTripDetails.home_currency))),
+                                      selectedTripDetails.home_currency
+                                    )}
                                   </span>
                                 )}
                               </>
@@ -1236,7 +1515,7 @@ export default function MissionControlDashboard() {
                         </div>
                         <div>
                           <span className="text-slate-500 block text-2xs uppercase">Assistants Active</span>
-                          <span className="font-semibold text-white text-sm">12 / 12</span>
+                          <span className="font-semibold text-white text-sm block">12 / 12</span>
                         </div>
                       </div>
                       <span className="text-2xs text-emerald-400 font-semibold flex items-center">
@@ -1372,11 +1651,61 @@ export default function MissionControlDashboard() {
                 {/* Searchable Autocomplete Country Planner */}
                 <div className="glass rounded-2xl p-6 relative">
                   <h3 className="font-bold text-base text-white mb-6">Launch New Travel Mission</h3>
-                  <form onSubmit={handleCreateTrip} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                  <form onSubmit={handleCreateTrip} className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     
-                    {/* Searchable dropdown input */}
+                    {/* Searchable Home Country dropdown */}
                     <div className="relative">
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Destination City & Country</label>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Home Country</label>
+                      <div className="relative">
+                        <input 
+                          type="text" 
+                          placeholder="Search e.g. India" 
+                          value={homeCountrySearch}
+                          onChange={(e) => {
+                            setHomeCountrySearch(e.target.value);
+                            setShowHomeCountryDropdown(true);
+                          }}
+                          onFocus={() => setShowHomeCountryDropdown(true)}
+                          className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
+                        />
+                        <Search className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                      </div>
+
+                      <AnimatePresence>
+                        {showHomeCountryDropdown && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[180px] overflow-y-auto z-30 shadow-2xl no-scrollbar animate-fade-in"
+                          >
+                            {filteredHomeCountries.length > 0 ? (
+                              filteredHomeCountries.map((c, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    setHomeCurrency(c.currency);
+                                    setHomeCountrySearch(`${c.flag} ${c.name} (${c.currency})`);
+                                    setShowHomeCountryDropdown(false);
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white flex items-center space-x-2 min-h-[44px] cursor-pointer"
+                                >
+                                  <span>{c.flag}</span>
+                                  <span>{c.name} ({c.currency})</span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-4 py-3 text-2xs text-slate-500 italic">No matching countries.</div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Searchable Destination Country dropdown */}
+                    <div className="relative">
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Destination Country</label>
                       <div className="relative">
                         <input 
                           type="text" 
@@ -1392,7 +1721,6 @@ export default function MissionControlDashboard() {
                         <Search className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-500" />
                       </div>
 
-                      {/* Dropdown popup */}
                       <AnimatePresence>
                         {showCountryDropdown && (
                           <motion.div 
@@ -1408,14 +1736,14 @@ export default function MissionControlDashboard() {
                                   type="button"
                                   onClick={() => {
                                     setDestination(c.name);
-                                    setCountrySearch(`${c.flag} ${c.name}`);
+                                    setCountrySearch(`${c.flag} ${c.name} (${c.currency})`);
                                     setDestCurrency(c.currency);
                                     setShowCountryDropdown(false);
                                   }}
                                   className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white flex items-center space-x-2 min-h-[44px] cursor-pointer"
                                 >
                                   <span>{c.flag}</span>
-                                  <span>{c.name} ({c.code})</span>
+                                  <span>{c.name} ({c.currency})</span>
                                 </button>
                               ))
                             ) : (
@@ -1427,6 +1755,16 @@ export default function MissionControlDashboard() {
                     </div>
 
                     <div>
+                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Total Budget</label>
+                      <input 
+                        type="number" 
+                        value={budgetTotal} 
+                        onChange={(e) => setBudgetTotal(Number(e.target.value))} 
+                        className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
+                      />
+                    </div>
+
+                    <div>
                       <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Start Date</label>
                       <input 
                         type="date" 
@@ -1435,6 +1773,7 @@ export default function MissionControlDashboard() {
                         className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                       />
                     </div>
+
                     <div>
                       <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">End Date</label>
                       <input 
@@ -1444,15 +1783,7 @@ export default function MissionControlDashboard() {
                         className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Total Budget</label>
-                      <input 
-                        type="number" 
-                        value={budgetTotal} 
-                        onChange={(e) => setBudgetTotal(Number(e.target.value))} 
-                        className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]" 
-                      />
-                    </div>
+
                     <button 
                       type="submit" 
                       disabled={creatingTrip}
@@ -1751,49 +2082,29 @@ export default function MissionControlDashboard() {
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
-                  {/* Left: Trend Graph */}
-                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 h-[440px] flex flex-col justify-between">
+                  {/* Left: Redesigned Global Currency Converter */}
+                  <div className="glass rounded-2xl p-6 col-span-1 lg:col-span-2 flex flex-col justify-between relative min-h-[480px]">
                     <div>
-                      <h3 className="font-bold text-sm text-white mb-1">Exchange Rate Trend Tracker</h3>
-                      <p className="text-slate-400 text-xs">Fluctuation metrics for {selectedTripDetails?.currency} relative to {selectedTripDetails?.home_currency}</p>
-                    </div>
-                    
-                    <div className="h-[250px] w-full mt-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={currencyRates?.trends?.weekly_trend || mockWeeklyTrend}>
-                          <defs>
-                            <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                              <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <XAxis dataKey="day" stroke="#475569" fontSize={9} tickLine={false} />
-                          <YAxis stroke="#475569" fontSize={9} domain={['auto', 'auto']} tickLine={false} />
-                          <Tooltip formatter={(value) => [`${value}`, 'Exchange Rate']} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", borderRadius: "12px", fontSize: "11px" }} />
-                          <Area type="monotone" dataKey="rate" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#colorRate)" />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                    
-                    <div className="text-3xs text-slate-500 flex justify-between border-t border-slate-800/80 pt-4 mt-2">
-                      <span>Timestamp: {currencyRates?.last_updated || "Live"}</span>
-                      <span>Trend Confidence: High</span>
-                    </div>
-                  </div>
+                      <div className="flex justify-between items-center mb-6">
+                        <div>
+                          <h3 className="font-bold text-base text-white">Global Currency Converter</h3>
+                          <p className="text-slate-400 text-xs mt-1">Convert between any official currency in the world. Rates update automatically.</p>
+                        </div>
+                        {ratesLastUpdated && (
+                          <span className="text-3xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg font-bold">
+                            Live Rates (Updated {ratesLastUpdated})
+                          </span>
+                        )}
+                      </div>
 
-                  {/* Right: Redesigned Bi-directional Currency Converter Widget */}
-                  <div className="glass rounded-2xl p-6 col-span-1 h-[440px] flex flex-col justify-between relative">
-                    <div>
-                      <h3 className="font-bold text-sm text-white mb-4">Currency Exchange Intelligence</h3>
-                      
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-9 gap-4 items-center">
                         {/* FROM Selector */}
-                        <div className="relative">
+                        <div className="col-span-1 md:col-span-4 relative">
                           <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Convert From</label>
                           <div className="relative">
                             <input 
                               type="text" 
-                              placeholder="Search e.g. India"
+                              placeholder="Search e.g. India, Rupee, INR"
                               value={searchFrom || convertFrom}
                               onChange={(e) => {
                                 setSearchFrom(e.target.value);
@@ -1811,9 +2122,9 @@ export default function MissionControlDashboard() {
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 5 }}
-                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[180px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
                               >
-                                {COUNTRIES.filter(c => c.name.toLowerCase().includes(searchFrom.toLowerCase()) || c.currency.toLowerCase().includes(searchFrom.toLowerCase())).map((c, idx) => (
+                                {filteredFromCurrencies.map((c, idx) => (
                                   <button
                                     key={idx}
                                     type="button"
@@ -1821,42 +2132,57 @@ export default function MissionControlDashboard() {
                                       setConvertFrom(c.currency);
                                       setSearchFrom(`${c.flag} ${c.name} (${c.currency})`);
                                       setShowFromList(false);
+                                      addToRecentlyUsed(c.currency, convertTo);
                                     }}
                                     className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer flex items-center space-x-2"
                                   >
                                     <span>{c.flag}</span>
-                                    <span>{c.name} ({c.currency} {c.symbol})</span>
+                                    <div className="flex-1">
+                                      <div className="font-bold text-white text-xs">{c.name}</div>
+                                      <div className="text-3xs text-slate-400">{c.currencyName} ({c.currency})</div>
+                                    </div>
+                                    <span className="text-xs text-slate-500 font-mono font-bold">{c.symbol}</span>
                                   </button>
                                 ))}
                               </motion.div>
                             )}
                           </AnimatePresence>
+
+                          <div className="mt-3">
+                            <input 
+                              type="number" 
+                              value={convertAmountFrom}
+                              onChange={(e) => handleFromAmountChange(Number(e.target.value))}
+                              className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]"
+                            />
+                          </div>
                         </div>
 
-                        {/* Amount From Input */}
-                        <div>
-                          <input 
-                            type="number" 
-                            value={convertAmountFrom}
-                            onChange={(e) => handleFromAmountChange(Number(e.target.value))}
-                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px] font-mono"
-                          />
+                        {/* SWAP CURRENCIES BUTTON */}
+                        <div className="col-span-1 flex justify-center pt-4 md:pt-0">
+                          <button
+                            type="button"
+                            onClick={handleSwapCurrencies}
+                            className="p-3 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-600/20 hover:text-white transition-all cursor-pointer shadow-lg min-h-[44px]"
+                          >
+                            <ArrowRightLeft className="h-5 w-5 rotate-90 md:rotate-0" />
+                          </button>
                         </div>
 
                         {/* TO Selector */}
-                        <div className="relative">
+                        <div className="col-span-1 md:col-span-4 relative">
                           <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block mb-1">Convert To</label>
                           <div className="relative">
                             <input 
                               type="text" 
-                              placeholder="Search e.g. Europe"
+                              placeholder="Search e.g. Japan, JPY"
                               value={searchTo || convertTo}
                               onChange={(e) => {
                                 setSearchTo(e.target.value);
                                 setShowToList(true);
                               }}
                               onFocus={() => setShowToList(true)}
-                              className="w-full bg-slate-950 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white min-h-[44px]"
+                              className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none text-white min-h-[44px]"
                             />
                             <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-500" />
                           </div>
@@ -1867,9 +2193,9 @@ export default function MissionControlDashboard() {
                                 initial={{ opacity: 0, y: 5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: 5 }}
-                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[140px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
+                                className="absolute left-0 w-full mt-2 bg-[#0b0f19] border border-slate-800 rounded-xl max-h-[180px] overflow-y-auto z-30 shadow-2xl no-scrollbar"
                               >
-                                {COUNTRIES.filter(c => c.name.toLowerCase().includes(searchTo.toLowerCase()) || c.currency.toLowerCase().includes(searchTo.toLowerCase())).map((c, idx) => (
+                                {filteredToCurrencies.map((c, idx) => (
                                   <button
                                     key={idx}
                                     type="button"
@@ -1877,6 +2203,7 @@ export default function MissionControlDashboard() {
                                       setConvertTo(c.currency);
                                       setSearchTo(`${c.flag} ${c.name} (${c.currency})`);
                                       setShowToList(false);
+                                      addToRecentlyUsed(convertFrom, c.currency);
                                     }}
                                     className="w-full text-left px-4 py-3 text-xs text-slate-300 hover:bg-slate-800/60 hover:text-white min-h-[44px] cursor-pointer flex items-center space-x-2"
                                   >
@@ -1887,17 +2214,126 @@ export default function MissionControlDashboard() {
                               </motion.div>
                             )}
                           </AnimatePresence>
-                        </div>
 
-                        {/* Amount To Input (Editable!) */}
-                        <div>
-                          <input 
-                            type="number" 
-                            value={convertAmountTo}
-                            onChange={(e) => handleToAmountChange(Number(e.target.value))}
-                            className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px] font-mono"
-                          />
+                          <div className="mt-3">
+                            <input 
+                              type="number" 
+                              value={convertAmountTo}
+                              onChange={(e) => handleToAmountChange(Number(e.target.value))}
+                              className="w-full bg-slate-955 border border-slate-900 text-xs px-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 text-white min-h-[44px]"
+                            />
+                          </div>
                         </div>
+                      </div>
+
+                      {/* Display live exchange rate quote */}
+                      {liveRatesMap[convertTo] && (
+                        <div className="mt-6 p-4 rounded-xl border border-indigo-500/10 bg-indigo-500/5 text-xs text-indigo-300 font-semibold flex justify-between items-center">
+                          <span>1 {convertFrom} = {liveRatesMap[convertTo].toFixed(4)} {convertTo}</span>
+                          <span className="text-slate-500 text-3xs font-medium">Last updated {ratesLastUpdated || "Just now"}</span>
+                        </div>
+                      )}
+
+                      {/* Popular Currencies quick actions */}
+                      <div className="mt-6 space-y-2">
+                        <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block">Popular Currencies</label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { name: "India", code: "INR", flag: "🇮🇳" },
+                            { name: "United States", code: "USD", flag: "🇺🇸" },
+                            { name: "Eurozone", code: "EUR", flag: "🇪🇺" },
+                            { name: "United Kingdom", code: "GBP", flag: "🇬🇧" },
+                            { name: "Japan", code: "JPY", flag: "🇯🇵" },
+                            { name: "UAE", code: "AED", flag: "🇦🇪" },
+                            { name: "Canada", code: "CAD", flag: "🇨🇦" },
+                            { name: "Australia", code: "AUD", flag: "🇦🇺" }
+                          ].map((pop, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setConvertTo(pop.code);
+                                setSearchTo(`${pop.flag} ${pop.name} (${pop.code})`);
+                                addToRecentlyUsed(convertFrom, pop.code);
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg border border-slate-800 bg-[#090d16]/60 text-slate-300 hover:border-indigo-500/40 hover:text-white transition-all text-xs flex items-center space-x-1.5 min-h-[44px] cursor-pointer"
+                            >
+                              <span>{pop.flag}</span>
+                              <span className="font-semibold">{pop.code}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Recently Used Pairs */}
+                      {recentlyUsed.length > 0 && (
+                        <div className="mt-6 space-y-2">
+                          <label className="text-3xs text-slate-500 uppercase tracking-widest font-bold block">Recently Used Pairs</label>
+                          <div className="flex flex-wrap gap-2">
+                            {recentlyUsed.map((pair, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  setConvertFrom(pair.from);
+                                  const fromCountry = COUNTRIES.find(c => c.currency === pair.from);
+                                  setSearchFrom(fromCountry ? `${fromCountry.flag} ${fromCountry.name} (${pair.from})` : pair.from);
+
+                                  setConvertTo(pair.to);
+                                  const toCountry = COUNTRIES.find(c => c.currency === pair.to);
+                                  setSearchTo(toCountry ? `${toCountry.flag} ${toCountry.name} (${pair.to})` : pair.to);
+                                }}
+                                className="px-3 py-1.5 rounded-lg border border-slate-800/80 bg-slate-900/40 text-slate-400 hover:text-slate-200 hover:border-slate-700 text-xs min-h-[44px] cursor-pointer"
+                              >
+                                {pair.from} → {pair.to}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Side: Area Chart & Quick conversions reference list */}
+                  <div className="col-span-1 space-y-6">
+                    {/* Live Area Graph */}
+                    <div className="glass rounded-2xl p-6 h-[230px] flex flex-col justify-between">
+                      <div>
+                        <h4 className="font-bold text-xs text-white">Live Rate Trend Graph</h4>
+                        <span className="text-3xs text-slate-500 block mt-0.5">{convertFrom} relative to {convertTo} fluctuation</span>
+                      </div>
+                      
+                      <div className="h-[120px] w-full mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={currencyRates?.trends?.weekly_trend || mockWeeklyTrend}>
+                            <defs>
+                              <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <XAxis dataKey="day" stroke="#475569" fontSize={8} tickLine={false} />
+                            <YAxis stroke="#475569" fontSize={8} domain={['auto', 'auto']} tickLine={false} />
+                            <Tooltip formatter={(value) => [`${value}`, 'Rate']} contentStyle={{ backgroundColor: "#0b0f19", borderColor: "#1e293b", borderRadius: "8px", fontSize: "10px" }} />
+                            <Area type="monotone" dataKey="rate" stroke="#6366f1" strokeWidth={1.5} fillOpacity={1} fill="url(#colorRate)" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+
+                    {/* Quick conversions reference list */}
+                    <div className="glass rounded-2xl p-6 h-[230px] flex flex-col justify-between">
+                      <h4 className="font-bold text-xs text-white">Quick Conversions Ledger</h4>
+                      <div className="space-y-2 mt-2 max-h-[140px] overflow-y-auto no-scrollbar text-2xs">
+                        {[1, 5, 10, 50, 100, 250].map((unit, idx) => {
+                          const converted = liveRatesMap[convertTo] ? (unit * liveRatesMap[convertTo]).toFixed(2) : (unit * getStaticRate(convertFrom, convertTo)).toFixed(2);
+                          return (
+                            <div key={idx} className="flex justify-between items-center border-b border-slate-900/60 pb-1.5 last:border-0 last:pb-0">
+                              <span className="text-slate-400 font-mono">{unit} {convertFrom}</span>
+                              <span className="text-white font-bold font-mono">{converted} {convertTo}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1953,22 +2389,32 @@ export default function MissionControlDashboard() {
   );
 
   // Fake conversion factor helper for standalone converter
-  function roundConversion(amount: number, from: string, to: string) {
-    if (from === to) return amount.toFixed(2);
-    
+  function getStaticRate(from: string, to: string) {
+    if (from === to) return 1.0;
     const rates: any = {
-      USD: { EUR: 0.92, JPY: 155.4, INR: 83.5, GBP: 0.79, AUD: 1.51 },
-      EUR: { USD: 1.09, JPY: 168.9, INR: 90.7, GBP: 0.86, AUD: 1.64 },
+      USD: { EUR: 0.92, JPY: 155.4, INR: 83.5, GBP: 0.79, AUD: 1.51, CAD: 1.36, AED: 3.67 },
+      EUR: { USD: 1.09, JPY: 168.9, INR: 90.7, GBP: 0.86, AUD: 1.64, CAD: 1.48, AED: 4.0 },
       JPY: { USD: 0.0064, EUR: 0.0059, INR: 0.54, GBP: 0.0051, AUD: 0.0097 },
       INR: { USD: 0.012, EUR: 0.011, JPY: 1.86, GBP: 0.0095, AUD: 0.018 },
       GBP: { USD: 1.27, EUR: 1.16, JPY: 196.7, INR: 105.3, AUD: 1.91 },
-      AUD: { USD: 0.66, EUR: 0.61, JPY: 102.9, INR: 55.2, GBP: 0.52 }
+      AUD: { USD: 0.66, EUR: 0.61, JPY: 102.9, INR: 55.2, GBP: 0.52 },
+      CAD: { USD: 0.74, EUR: 0.68, JPY: 114.2, INR: 61.4, GBP: 0.58 }
     };
     
-    // Find rates or approximate JPY base
-    const fromRate = rates[from]?.[to] || (from === "JPY" ? 0.0064 : 1.0);
-    const toRate = rates[to]?.[from] || (to === "JPY" ? 155.4 : 1.0);
+    if (rates[from]?.[to]) return rates[from][to];
+    if (rates[to]?.[from]) return 1 / rates[to][from];
     
-    return (amount * fromRate).toFixed(2);
+    // Default fallback approximations via USD base rates
+    const usdBase: any = {
+      USD: 1.0, EUR: 0.92, GBP: 0.79, JPY: 155.4, INR: 83.5, AUD: 1.51, CAD: 1.36, CHF: 0.89, CNY: 7.25, KRW: 1380, SGD: 1.35, AED: 3.67, QAR: 3.64, SAR: 3.75, THB: 36.6, MYR: 4.71, NZD: 1.63
+    };
+    
+    const fromUSD = usdBase[from] || 1.0;
+    const toUSD = usdBase[to] || 1.0;
+    return toUSD / fromUSD;
+  }
+
+  function roundConversion(amount: number, from: string, to: string) {
+    return (amount * getStaticRate(from, to)).toFixed(2);
   }
 }
